@@ -29,3 +29,27 @@ AIChatBot は、ユーザーの OpenAI API キーを使って Discord 上で Cha
 pip install -r requirements.txt
 python ui/discord/Discord_AIChatBot.py
 \`\`\`
+
+## Slash コマンド一覧（Discord）
+
+AIChatBot は以下の Slash コマンドを提供しています：
+
+| コマンド         | 説明                                                         |
+|------------------|--------------------------------------------------------------|
+| `/help`          | このヘルプを表示します                                      |
+| `/template`      | 認証用テンプレート（JSON）ファイルをダウンロードします     |
+| `/newchat [件名]`| 新しいAIチャットスレッドを作成します（件名は任意）         |
+
+> 🔒 チャット機能を使用するには、認証情報（JSONファイル）のアップロードが必要です。  
+> アップロードは別途実装される `/auth` コマンドから行います。
+
+---
+
+## 🔄 認証テンプレートについて
+
+Bot を使用するためには、ユーザーごとの認証情報が必要です。  
+Bot からテンプレート（例：`auth_template.json`）を `/template` コマンドでダウンロードし、  
+自身の OpenAI API Key 等を記入して `/auth` でアップロードしてください。
+
+テンプレートは `common/template/auth_template.json` に格納されています。
+
