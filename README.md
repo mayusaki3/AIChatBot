@@ -15,13 +15,22 @@ AIChatBot は、ユーザーの OpenAI API キーを使って Discord 上で Cha
    5. `.env` の DISCORD_BOT_TOKEN= に貼り付け
    🔒 注意：このトークンは絶対に外部に公開しないでください。
              Gitに含めないよう `.gitignore` で保護します。
+
+   ### 🔹 Discord Guild ID の取得手順（開発時のみ）
+   1. DiscordクライアントでDiscordにアクセス
+   2. ユーザー設定 → 詳細設定 → 「開発者モード」を有効化
+   3. 対象のサーバー名を右クリック → 「IDをコピー」
+   4. `.env` の DISCORD_GUILD_ID= に貼り付け
+   🔒 注意：このIDは絶対に外部に公開しないでください。
+             Gitに含めないよう `.gitignore` で保護します。
+
    ### 🔹 OpenAI API Key の取得手順
    1. [OpenAI Platform](https://platform.openai.com/account/api-keys) にログイン
    2. 「+ Create new secret key」でAPIキーを生成
    3. 表示された `sk-xxxxx...` 形式のキーをコピー
-   4. `.env` の OPENAI_API_KEY= に貼り付け
+   4. /ac_template コマンドでダウンロードした JSONファイル の "api_key": に貼り付け
    🔒 注意：このAPIキーは絶対に外部に公開しないでください。
-             Gitに含めないよう `.gitignore` で保護します。
+   5. 必要に応じて利用するチャットモデルをJSONファイル の "model": に貼り付け
 
 ## 起動方法（Discord）
 
@@ -36,20 +45,20 @@ AIChatBot は以下の Slash コマンドを提供しています：
 
 | コマンド         | 説明                                                         |
 |------------------|--------------------------------------------------------------|
-| `/help`          | このヘルプを表示します                                      |
-| `/template`      | 認証用テンプレート（JSON）ファイルをダウンロードします     |
+| `/ac\help`       | このヘルプを表示します                                      |
+| `/ac\template`   | 認証用テンプレート（JSON）ファイルをダウンロードします     |
 | `/newchat [件名]`| 新しいAIチャットスレッドを作成します（件名は任意）         |
 
 > 🔒 チャット機能を使用するには、認証情報（JSONファイル）のアップロードが必要です。  
-> アップロードは別途実装される `/auth` コマンドから行います。
+> アップロードは別途実装される `/ac_auth` コマンドから行います。
 
 ---
 
 ## 🔄 認証テンプレートについて
 
 Bot を使用するためには、ユーザーごとの認証情報が必要です。  
-Bot からテンプレート（例：`auth_template.json`）を `/template` コマンドでダウンロードし、  
-自身の OpenAI API Key 等を記入して `/auth` でアップロードしてください。
+Bot からテンプレート（例：`auth_template.json`）を `/ac_template` コマンドでダウンロードし、  
+自身の OpenAI API Key 等を記入して `/ac_auth` でアップロードしてください。
 
 テンプレートは `common/template/auth_template.json` に格納されています。
 
