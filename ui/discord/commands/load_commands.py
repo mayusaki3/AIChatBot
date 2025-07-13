@@ -5,7 +5,7 @@ import pkgutil
 from pathlib import Path
 
 # /コマンド読み込み
-def load_commands(tree, client):
+def load_commands(tree, client, guild):
     command_dir = Path(__file__).parent
     package_name = __name__.rpartition('.')[0]  # "ui.discord.commands"
 
@@ -14,4 +14,4 @@ def load_commands(tree, client):
             module_path = f"{package_name}.{module_name}"
             module = importlib.import_module(module_path)
             if hasattr(module, "register"):
-                module.register(tree, client)
+                module.register(tree, client, guild)

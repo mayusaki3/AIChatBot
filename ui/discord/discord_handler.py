@@ -226,7 +226,7 @@ async def on_ready():
     print(f"✅ {client.user} としてログインしました。(Ctrl-Cで終了します)")
 
     try:
-        load_commands(tree, client)
+        load_commands(tree, client, GUILD_OBJ)
         for cmd in tree.get_commands():
             print(f"🔍 コマンド登録: /{cmd.name}")
         if USE_GUILD:

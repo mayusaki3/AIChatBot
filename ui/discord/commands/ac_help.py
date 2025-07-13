@@ -3,43 +3,41 @@ from discord import app_commands
 import importlib.util
 import os
 
-HELP_TEXT = "AIチャットBotで使用できるコマンド一覧を表示します。"
+HELP_TEXT = {
+    "usage": "/ac_help",
+    "description": "すべての /ac_ コマンドのヘルプを表示します。"
+}
 
-COMMANDS_DIR = os.path.join(os.path.dirname(__file__))
+COMMANDS_DIR = os.path.dirname(__file__)
 
-class HelpCommand(app_commands.Command):
-    def __init__(self):
-        super().__init__(
-            name="ac_help",
-            description="使用できる /ac_ コマンドの一覧を表示します",
-            callback=self.callback
-        )
+@app_commands.command(name="ac_help", description=HELP_TEXT["description"])
+async def ac_help_command(interaction: discord.Interaction):
+    help_messages = []
 
-    async def callback(self, interaction: discord.Interaction):
-        help_messages = []
-
-        for filename in os.listdir(COMMANDS_DIR):
-            if not filename.startswith("ac_") or not filename.endswith(".py"):
-                continue
-            if filename == "ac_help.py":
-                continue
-
+    for filename in os.listdir(COMMANDS_DIR):
+        if filename.startswith("ac_") and filename.endswith(".py"):
             module_name = filename[:-3]
-            module_path = os.path.join(COMMANDS_DIR, filename)
-
             try:
-                spec = importlib.util.spec_from_file_location(module_name, module_path)
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-
-                cmd_name = f"/{module_name}"
-                cmd_help = getattr(module, "HELP_TEXT", "（ヘルプ未定義）")
-                help_messages.append(f"**{cmd_name}**\n{cmd_help}")
+                module = importlib.import_module(f"ui.discord.commands.{module_name}")
+                help_text = getattr(module, "HELP_TEXT", None)
+                if isinstance(help_text, dict):
+                    usage = help_text.get("usage", f"/{module_name}")
+                    desc = help_text.get("description", "(未定義)")
+                    help_messages.append(f"**/{module_name}**\n使い方: {usage}\n説明: {desc}")
+                else:
+                    help_messages.append(f"**/{module_name}**\n使い方: /{module_name}\n説明: (ヘルプ未定義)")
             except Exception as e:
-                # ロード失敗は無視
-                continue
+                help_messages.append(f"**/{module_name}**\nエラー: {e}")
 
-        embed = discord.Embed(title="📘 使用可能な /ac_ コマンド", color=discord.Color.blue())
-        embed.description = "\n\n".join(help_messages) if help_messages else "利用可能なコマンドが見つかりませんでした。"
+    embed = discord.Embed(
+        title="AIChatBot コマンドヘルプ",
+        description="\n\n".join(help_messages),
+        color=0x00ffcc
+    )
+    await interaction.response.send_message(embed=embed)
 
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
+    if guild:
+        tree.add_command(ac_help_command, guild=guild)
+    else:
+        tree.add_command(ac_help_command)
