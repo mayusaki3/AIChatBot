@@ -7,6 +7,6 @@ HELP_TEXT = {
     "usage": "/ac_auth"
 }
 
-@app_commands.command(name="ac_auth", description=HELP_TEXT["description"], guild=GUILD_OBJ)
+@app_commands.command(name="ac_auth", description=HELP_TEXT["description"])
 async def ac_newchat(interaction: Interaction):
     await interaction.response.send_message("✅ `ac_auth` コマンドが実行されました。")

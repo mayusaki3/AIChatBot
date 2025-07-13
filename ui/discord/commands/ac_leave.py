@@ -7,6 +7,6 @@ HELP_TEXT = {
     "usage": "/ac_leave"
 }
 
-@app_commands.command(name="ac_leave", description=HELP_TEXT["description"], guild=GUILD_OBJ)
+@app_commands.command(name="ac_leave", description=HELP_TEXT["description"])
 async def ac_leave(interaction: Interaction):
     await interaction.response.send_message("✅ `ac_leave` コマンドが実行されました。")

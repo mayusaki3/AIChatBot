@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from ai.chatgpt.validator import is_valid_openai_key, is_chat_model_available
 from typing import Optional
 from common.utils import thread_utils
+from ui.discord.commands.load_commands import load_commands
 
 load_dotenv()
 

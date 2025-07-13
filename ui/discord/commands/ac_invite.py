@@ -7,6 +7,6 @@ HELP_TEXT = {
     "usage": "/ac_invite"
 }
 
-@app_commands.command(name="ac_invite", description=HELP_TEXT["description"], guild=GUILD_OBJ)
+@app_commands.command(name="ac_invite", description=HELP_TEXT["description"])
 async def ac_invite(interaction: Interaction):
     await interaction.response.send_message("✅ `ac_invite` コマンドが実行されました。")

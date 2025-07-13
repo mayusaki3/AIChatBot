@@ -7,6 +7,6 @@ HELP_TEXT = {
     "usage": "/ac_status"
 }
 
-@app_commands.command(name="ac_status", description=HELP_TEXT["description"], guild=GUILD_OBJ)
+@app_commands.command(name="ac_status", description=HELP_TEXT["description"])
 async def ac_status(interaction: Interaction):
     await interaction.response.send_message("✅ `ac_status` コマンドが実行されました。")
