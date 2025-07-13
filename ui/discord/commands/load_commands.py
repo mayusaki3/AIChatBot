@@ -15,3 +15,4 @@ def load_commands(tree, client, guild):
             module = importlib.import_module(module_path)
             if hasattr(module, "register"):
                 module.register(tree, client, guild)
+                print(f"🔎 検出: /{module_name} コマンド")
