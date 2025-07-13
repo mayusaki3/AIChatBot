@@ -227,6 +227,8 @@ async def on_ready():
 
     try:
         load_commands(tree, client)
+        for cmd in tree.get_commands():
+            print(f"🔍 コマンド登録: /{cmd.name}")
         if USE_GUILD:
             await tree.sync(guild=GUILD_OBJ)
             print(f"🧪 開発モード（サーバーID={raw_gid}）でコマンドを同期しました")
