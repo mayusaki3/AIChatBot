@@ -1,13 +1,19 @@
 import json
 import os
+import sys
+import datetime
+import shutil
 from pathlib import Path
 import discord
 from discord import app_commands
+from discord import Interaction, Thread, ChannelType
 from discord import Interaction
 from discord.ext import commands
 from common.session.user_session_manager import UserSessionManager
 from dotenv import load_dotenv
 from ai.chatgpt.validator import is_valid_openai_key, is_chat_model_available
+from typing import Optional
+from common.utils import thread_utils
 
 load_dotenv()
 
@@ -16,6 +22,7 @@ raw_gid = os.getenv("DISCORD_GUILD_ID", "").strip()
 USE_GUILD = bool(raw_gid and not raw_gid.startswith("#"))
 GUILD_OBJ = discord.Object(id=int(raw_gid)) if USE_GUILD else None
 
+service_name = "discord"
 client = discord.Client(intents=discord.Intents.all())
 tree = app_commands.CommandTree(client)
 session_manager = UserSessionManager()
@@ -27,8 +34,10 @@ async def on_message(message):
     if message.author.bot:
         return
         
-    # スレッド内でのみ処理を行う
+    # AIChatスレッド内でのみ処理を行う
     if not isinstance(message.channel, discord.Thread):
+        return
+    if "AIChat - " not in discord.Thread.name:
         return
 
     user_id = message.author.id
@@ -61,7 +70,11 @@ async def on_message(message):
     await message.channel.send(reply)
 
 # 認証テンプレートダウンロードコマンド
-@tree.command(name="ac_template", description="認証テンプレート（JSON）をダウンロード", guild=GUILD_OBJ)
+@tree.command(
+    name="ac_template",
+    description="認証テンプレート（JSON）をダウンロード",
+    guild=GUILD_OBJ  # または None = 全体公開
+)
 async def ac_template_command(interaction: discord.Interaction):
     try:
         file_path = Path(__file__).resolve().parent.parent.parent / "common/template/auth_template.json"
@@ -78,7 +91,11 @@ async def ac_template_command(interaction: discord.Interaction):
         await interaction.response.send_message(f"エラーが発生しました: {e}", ephemeral=True)
 
 # 認証情報アップロードコマンド
-@tree.command(name="ac_auth", description="認証情報をアップロードして登録します", guild=GUILD_OBJ)
+@tree.command(
+    name="ac_auth",
+    description="認証情報をアップロードして登録します",
+    guild=GUILD_OBJ  # または None = 全体公開
+)
 @app_commands.describe(file="記入済みの認証テンプレートJSONファイルを添付してください")
 async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
     try:
@@ -123,16 +140,76 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
     except Exception as e:
         await interaction.response.send_message(f"❌ エラーが発生しました: {e}", ephemeral=True)
 
+# AIチャット用スレッドを作成
+@tree.command(
+    name="ac_newchat",
+    description="🛑スレッド内では使用できません：AIチャット用スレッドを作成します",
+    guild=GUILD_OBJ  # または None = 全体公開
+)
+@app_commands.describe(title="（任意）スレッドのタイトルを指定できます")
+async def ac_newchat_command(interaction: Interaction, title: Optional[str] = None):
+    # 🔒 スレッド内では使用不可
+    if isinstance(interaction.channel, Thread):
+        await interaction.response.send_message(
+            "❌ このコマンドは **スレッド内では使用できません**。\n"
+            "通常のテキストチャンネルで実行してください。",
+            ephemeral=True
+        )
+        return
+
+    try:
+        now_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+        user_name = interaction.user.display_name
+
+        if title:
+            thread_name = f"AIChat - {title}"
+        else:
+            thread_name = f"AIChat - {user_name} - {now_str}"
+
+        thread = await interaction.channel.create_thread(
+            name=thread_name,
+            type=ChannelType.public_thread,
+            auto_archive_duration=1440,
+            invitable=False
+        )
+
+        await thread.send(
+            f"💬 このスレッドは {interaction.user.mention} によって作成された **AIChatBot 用スレッド** です。\n"
+            f"・このスレッド内での発言は、発言者が登録した認証情報に基づいて AI に送信・応答されます。\n"
+            f"・現時点、文脈情報は利用できません。"
+        )
+
+        await interaction.response.send_message(
+            f"✅ スレッド [`{thread_name}`] を作成しました。",
+            ephemeral=True
+        )
+
+    except Exception as e:
+        await interaction.response.send_message(
+            f"❌ スレッド作成に失敗しました：{str(e)}",
+            ephemeral=True
+        )
+
 # ヘルプコマンド
-@tree.command(name="ac_help", description="コマンド一覧を表示します", guild=GUILD_OBJ)
+@tree.command(
+    name="ac_help",
+    description="コマンド一覧を表示します",
+    guild=GUILD_OBJ  # または None = 全体公開
+)
 async def ac_help_command(interaction: discord.Interaction):
     help_text = """📘 **AIChatBot コマンド一覧**
 
 /ac_help     - このヘルプを表示します
 /ac_template - 認証テンプレート（JSON）をダウンロード
+/ac_auth [ファイル] - 認証情報をアップロードして登録します
+
+チャンネル専用コマンド
 /ac_newchat [トピック名] - 新しいAIチャットスレッドを開始します
 
-📌 スレッド内でのみAIとのチャットが可能です。
+スレッド内専用コマンド
+
+
+📌 AIChatスレッド内でのみAIとのチャットが可能です。
 🔐 認証には JSON ファイルをアップロードしてください。
 """
     await interaction.response.send_message(help_text, ephemeral=True)
@@ -140,7 +217,7 @@ async def ac_help_command(interaction: discord.Interaction):
 # Bot起動イベント
 @client.event
 async def on_ready():
-    print(f"✅ {client.user} としてログインしました。")
+    print(f"✅ {client.user} としてログインしました。(Ctrl-Cで終了します)")
 
     try:
         if USE_GUILD:
@@ -149,11 +226,29 @@ async def on_ready():
         else:
             await tree.sync()
             print("🚀 本番モード（グローバル）でコマンドを同期しました")
+	
+        # すべてのサーバー（Guild）に対して処理
+        for guild in client.guilds:
+            server_id = str(guild.id)
+
+            thread_ids = []
+            for channel in guild.text_channels:
+                for thread in channel.threads:
+                    thread_ids.append(str(thread.id))
+
+            # スレッド削除検出（ファイル上の管理情報と実際のスレッドを突き合わせ）
+            thread_utils.clean_deleted_threads("discord", server_id, thread_ids)
+
+        # 削除済みサーバーの検出とクリーニング
+        known_server_ids = set(str(guild.id) for guild in client.guilds)
+        thread_utils.clean_deleted_servers("discord", known_server_ids)
+
+        print("✅ 存在しないサーバー/スレッドのチェックおよびクリーンアップを完了しました")
 
     except Exception as e:
         print(f"❌ コマンド同期に失敗しました: {e}")
         import sys
-        sys.exit(1)  # プロセスを停止
+        sys.exit(1)
 
 # Bot起動
 def start_discord_bot():
