@@ -16,8 +16,6 @@ def is_valid_openai_key(api_key: str):
 
     try:
         response = requests.post(OPENAI_CHAT_ENDPOINT, headers=headers, json=test_payload, timeout=10)
-        print(f"APIキー検証レスポンス: {response.status_code} / {response.text}")
-
         if response.status_code == 200:
             return True
         elif response.status_code == 429:

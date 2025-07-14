@@ -7,8 +7,8 @@ from common.session.user_session_manager import UserSessionManager
 session_manager = UserSessionManager()
 
 HELP_TEXT = {
-    "usage": "/ac_auth",
-    "description": "AIとの新しいスレッドを作成します。"
+    "usage": "/ac_auth <file>",
+    "description": "使用するAIチャットの認証情報を登録します。"
 }
 
 @app_commands.command(name="ac_auth", description=HELP_TEXT["description"])
@@ -42,8 +42,6 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
         else:
             await interaction.followup.send("❌ 現在は provider='openai' のみ対応しています", ephemeral=True)
             return
-
-        print("[E]")
 
         # 保存（ユーザーごとのセッション管理）
         user_id = str(interaction.user.id)

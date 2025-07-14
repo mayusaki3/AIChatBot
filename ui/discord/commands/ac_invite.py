@@ -3,27 +3,36 @@ import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 import discord
 from discord import app_commands, Interaction
-from common.utils.thread_utils import add_thread_to_server
+from common.utils.thread_utils import add_thread_to_server, is_thread_managed
 from discord_handler import service_name
 
 HELP_TEXT = {
     "usage": "/ac_invite",
-    "description": "🧵スレッド内のみ: AIチャットを現在のスレッドに招待します。"
+    "description": "🧵スレッド内のみ: AIChatBotを現在のスレッドに招待します。"
 }
 
 @app_commands.command(name="ac_invite", description=HELP_TEXT["description"])
 async def ac_invite_command(interaction: Interaction):
     thread = interaction.channel
     if thread is None or not hasattr(thread, "add_user"):
-        await interaction.response.send_message("❌ このチャンネルでは実行できません。", ephemeral=True)
+        await interaction.response.send_message("❌ スレッド外では実行できません。", ephemeral=True)
+        return
+
+    if is_thread_managed(service_name, interaction.guild_id, thread.id):
+        await interaction.response.send_message("⚠️ AIChatBotは既にこのスレッドに参加しています。", ephemeral=True)
         return
 
     try:
-        await thread.add_user(interaction.client.user)
+        if thread.owner_id != interaction.client.user.id:
+            try:
+                await thread.add_user(interaction.client.user)
+            except discord.Forbidden:
+                await interaction.response.send_message("⚠️ AIChatBotを招待する権限がありません。", ephemeral=True)
+                return
         add_thread_to_server(service_name, interaction.guild_id, thread.id)
-        await interaction.response.send_message("✅ Botをこのスレッドに招待しました。", ephemeral=True)
+        await interaction.response.send_message("✅ AIChatBotをこのスレッドに招待しました。", ephemeral=True)
     except Exception as e:
-        await interaction.response.send_message(f"❌ 招待に失敗しました: {e}", ephemeral=True)
+        await interaction.response.send_message(f"❌ AIChatBotの招待に失敗しました: {e}", ephemeral=True)
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
     if guild:

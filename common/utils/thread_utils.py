@@ -14,7 +14,7 @@ def load_server_threads(service_name: str, server_id: str) -> list[str]:
     if not os.path.exists(path):
         return []
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        return [str(tid).strip() for tid in json.load(f)]
 
 # サーバーIDの全スレッドを保存
 def save_server_threads(service_name: str, server_id: str, threads: list[str]) -> None:
@@ -25,6 +25,7 @@ def save_server_threads(service_name: str, server_id: str, threads: list[str]) -
 
 # サーバーIDにスレッドを追加
 def add_thread_to_server(service_name: str, server_id: str, thread_id: str) -> None:
+    thread_id = str(thread_id).strip()
     threads = load_server_threads(service_name, server_id)
     if thread_id not in threads:
         threads.append(thread_id)
@@ -32,13 +33,22 @@ def add_thread_to_server(service_name: str, server_id: str, thread_id: str) -> N
 
 # サーバーIDからスレッドを削除
 def remove_thread_from_server(service_name: str, server_id: str, thread_id: str) -> None:
+    thread_id = str(thread_id).strip()
     threads = load_server_threads(service_name, server_id)
     if thread_id in threads:
         threads.remove(thread_id)
         save_server_threads(service_name, server_id, threads)
 
+# スレッドIDはチャット処理対象か？
+def is_thread_managed(service_name: str, server_id: str, thread_id: str) -> bool:
+    thread_id = str(thread_id).strip()
+    thread_ids = load_server_threads(service_name, server_id)
+    return thread_id in thread_ids
+
 # 保存されているスレッドIDのうち、現在のサーバーに存在するものだけをフィルタリング
 def filter_existing_threads(saved_ids: list[str], current_ids: list[str]) -> list[str]:
+    saved_ids = [str(x).strip() for x in saved_ids]
+    current_ids = [str(x).strip() for x in current_ids]
     return [tid for tid in saved_ids if tid in current_ids]
 
 # サーバーIDが存在しない場合、スレッド情報を削除

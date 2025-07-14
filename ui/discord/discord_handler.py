@@ -1,16 +1,9 @@
-import json
 import os
-import sys
-import datetime
-import shutil
 import discord
-from discord import app_commands
-from discord import Interaction, Thread, ChannelType
-from discord import Interaction
+from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
 from common.session.user_session_manager import UserSessionManager
 from dotenv import load_dotenv
-from typing import Optional
 from common.utils import thread_utils
 from ui.discord.commands.load_commands import load_commands
 
@@ -25,11 +18,6 @@ service_name = "discord"
 client = discord.Client(intents=discord.Intents.all())
 tree = app_commands.CommandTree(client)
 session_manager = UserSessionManager()
-
-
-import importlib
-import pkgutil
-from pathlib import Path
 
 # Discordメッセージ送信イベント
 @client.event
@@ -73,71 +61,6 @@ async def on_message(message):
 
     await message.channel.send(reply)
 
-# # AIチャット用スレッドを作成
-# @tree.command(
-#     name="ac_newchat",
-#     description="🛑スレッド内では使用できません：AIチャット用スレッドを作成します",
-#     guild=GUILD_OBJ  # または None = 全体公開
-# )
-# @app_commands.describe(title="（任意）スレッドのタイトルを指定できます")
-# async def ac_newchat_command(interaction: Interaction, title: Optional[str] = None):
-#     # 🔒 スレッド内では使用不可
-#     if isinstance(interaction.channel, Thread):
-#         await interaction.response.send_message(
-#             "❌ このコマンドは **スレッド内では使用できません**。\n"
-#             "通常のテキストチャンネルで実行してください。",
-#             ephemeral=True
-#         )
-#         return
-
-#     try:
-#         now_str = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-#         user_name = interaction.user.display_name
-
-#         if title:
-#             thread_name = f"AIChat - {title}"
-#         else:
-#             thread_name = f"AIChat - {user_name} - {now_str}"
-
-#         thread = await interaction.channel.create_thread(
-#             name=thread_name,
-#             type=ChannelType.public_thread,
-#             auto_archive_duration=1440,
-#             invitable=False
-#         )
-
-#         await thread.send(
-#             f"💬 このスレッドは {interaction.user.mention} によって作成された **AIChatBot 用スレッド** です。\n"
-#             f"・このスレッド内での発言は、発言者が登録した認証情報に基づいて AI に送信・応答されます。\n"
-#             f"・現時点、文脈情報は利用できません。"
-#         )
-
-#         await interaction.response.send_message(
-#             f"✅ スレッド [`{thread_name}`] を作成しました。",
-#             ephemeral=True
-#         )
-
-#     except Exception as e:
-#         await interaction.response.send_message(
-#             f"❌ スレッド作成に失敗しました：{str(e)}",
-#             ephemeral=True
-#         )
-
-
-
-# /ac_auth [ファイル] - 認証情報をアップロードして登録します
-
-# チャンネル専用コマンド
-# /ac_newchat [トピック名] - 新しいAIチャットスレッドを開始します
-
-# スレッド内専用コマンド
-
-
-# 📌 AIChatスレッド内でのみAIとのチャットが可能です。
-# 🔐 認証には JSON ファイルをアップロードしてください。
-# """
-#     await interaction.response.send_message(help_text, ephemeral=True)
-
 # Bot起動イベント
 @client.event
 async def on_ready():
@@ -153,22 +76,23 @@ async def on_ready():
         else:
             await tree.sync()
             print("🚀 本番モード（グローバル）でコマンドを同期しました")
-	
+
+        # 参加していないサーバーの検出とクリーニング（サーバーID単位）
+        existing_server_ids = {str(guild.id) for guild in client.guilds}
+        thread_utils.clean_deleted_servers(service_name, existing_server_ids)
+
         # すべてのサーバー（Guild）に対して処理
         for guild in client.guilds:
             server_id = str(guild.id)
+            thread_ids = set()
 
-            thread_ids = []
+            # チャンネルごとのアーカイブ済みスレッド
             for channel in guild.text_channels:
-                for thread in channel.threads:
-                    thread_ids.append(str(thread.id))
+                    for thread in channel.threads:
+                        thread_ids.add(str(thread.id))
 
-            # スレッド削除検出（ファイル上の管理情報と実際のスレッドを突き合わせ）
-            thread_utils.clean_deleted_threads("discord", server_id, thread_ids)
-
-        # 削除済みサーバーの検出とクリーニング
-        known_server_ids = set(str(guild.id) for guild in client.guilds)
-        thread_utils.clean_deleted_servers("discord", known_server_ids)
+            # スレッド存在チェック用に記憶されたスレッド一覧をクリーンアップ
+            thread_utils.clean_deleted_threads(service_name, server_id, thread_ids)
 
         print("✅ 存在しないサーバー/スレッドのチェックおよびクリーンアップを完了しました")
 
