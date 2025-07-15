@@ -7,7 +7,7 @@ from common.utils.thread_utils import remove_thread_from_server, is_thread_manag
 from discord_handler import service_name
 
 HELP_TEXT = {
-    "usage": "/ac_invite",
+    "usage": "/ac_leave",
     "description": "🧵スレッド内のみ: AIChatBotを現在のスレッドから退出させます。"
 }
 

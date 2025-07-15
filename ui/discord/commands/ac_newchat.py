@@ -6,7 +6,7 @@ from common.utils.thread_utils import add_thread_to_server
 from discord_handler import service_name
 
 HELP_TEXT = {
-    "usage": "/ac_newchat",
+    "usage": "/ac_newchat <title> <private>",
     "description": "🔒 スレッド内使用不可: AIチャットとの新しいスレッドを作成します。"
 }
 
