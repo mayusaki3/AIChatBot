@@ -2,7 +2,8 @@ import os
 import sys
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 import discord
-from discord import app_commands, Interaction
+from discord import app_commands, Interaction, Thread, ChannelType, Forbidden, HTTPException
+
 from common.utils.thread_utils import load_server_threads
 from discord_handler import service_name
 
@@ -22,7 +23,22 @@ async def ac_threads_command(interaction: Interaction):
     for thread_id in thread_ids:
         try:
             thread = await interaction.guild.fetch_channel(thread_id)
-            lines.append(f"- {thread.name}（ID: `{thread.id}`）")
+            if isinstance(thread, Thread):
+                is_private = thread.type == ChannelType.private_thread
+                try:
+                    # コマンド入力者がスレッドに参加しているかを確認
+                    await thread.fetch_member(interaction.user.id)
+                    user_is_member = True
+                except (Forbidden, HTTPException):
+                    user_is_member = False
+
+                # 表示条件：パブリックスレッド or 参加済みプライベートスレッド
+                if not is_private or user_is_member:
+                    lines.append(f"- {thread.name}（ID: `{thread.id}`）")
+                else:
+                    lines.append(f"- ？？？？？（ID: `{thread.id}`）")
+            else:
+                lines.append(f"- ID: `{thread_id}`（スレッドではありません）")
         except Exception as e:
             lines.append(f"- ID: `{thread_id}`（取得失敗: {e}）")
 

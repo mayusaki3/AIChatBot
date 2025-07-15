@@ -31,6 +31,11 @@ async def ac_leave_command(interaction: Interaction):
                 return
         remove_thread_from_server(service_name, interaction.guild_id, thread.id)
         await interaction.response.send_message("👋 AIChatBotはスレッドから退出しました。", ephemeral=True)
+        await thread.send(
+            f"💬 AIChatBotが退出しました。\n"
+            f"・以後のスレッド内での発言は、AI に送信されることはありません。"
+        )
+
     except Exception as e:
         await interaction.response.send_message(f"❌ AIChatBotの退出に失敗しました: {e}", ephemeral=True)
 

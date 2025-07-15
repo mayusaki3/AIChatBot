@@ -31,6 +31,11 @@ async def ac_invite_command(interaction: Interaction):
                 return
         add_thread_to_server(service_name, interaction.guild_id, thread.id)
         await interaction.response.send_message("✅ AIChatBotをこのスレッドに招待しました。", ephemeral=True)
+        await thread.send(
+            f"💬 AIChatBotが参加しました。\n"
+            f"・このスレッド内での発言は、発言者が登録した認証情報に基づいて AI に送信・応答されます。"
+        )
+
     except Exception as e:
         await interaction.response.send_message(f"❌ AIChatBotの招待に失敗しました: {e}", ephemeral=True)
 
