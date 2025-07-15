@@ -14,9 +14,10 @@ HELP_TEXT = {
 
 @app_commands.command(name="ac_threads", description=HELP_TEXT["description"])
 async def ac_threads_command(interaction: Interaction):
+    await interaction.response.defer(thinking=True, ephemeral=True)
     thread_ids = load_server_threads(service_name, interaction.guild_id)
     if not thread_ids:
-        await interaction.response.send_message("📭 会話中のスレッドはありません。", ephemeral=True)
+        await interaction.followup.send("📭 会話中のスレッドはありません。", ephemeral=True)
         return
 
     lines = ["🧵 会話中のスレッド一覧:"]
@@ -42,7 +43,7 @@ async def ac_threads_command(interaction: Interaction):
         except Exception as e:
             lines.append(f"- ID: `{thread_id}`（取得失敗: {e}）")
 
-    await interaction.response.send_message("\n".join(lines), ephemeral=True)
+    await interaction.followup.send("\n".join(lines), ephemeral=True)
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
     if guild:

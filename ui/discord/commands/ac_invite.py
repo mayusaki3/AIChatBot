@@ -24,11 +24,18 @@ async def ac_invite_command(interaction: Interaction):
 
     try:
         if thread.owner_id != interaction.client.user.id:
+            # Botがスレッド作成者でない場合
+            if thread.is_private() and interaction.user.id != thread.owner_id:
+                await interaction.response.send_message("⚠️ プライベートスレッドでAIChatBotを招待するには、スレッド作成者である必要があります。", ephemeral=True)
+                return
+
+            # Botが招待できるか試行
             try:
                 await thread.add_user(interaction.client.user)
             except discord.Forbidden:
-                await interaction.response.send_message("⚠️ AIChatBotを招待する権限がありません。", ephemeral=True)
+                await interaction.response.send_message("⚠️ AIChatBotを招待する権限がありません。\n@AIChatBot に memtion してから再実行してください。", ephemeral=True)
                 return
+
         add_thread_to_server(service_name, interaction.guild_id, thread.id)
         await interaction.response.send_message("✅ AIChatBotをこのスレッドに招待しました。", ephemeral=True)
         await thread.send(

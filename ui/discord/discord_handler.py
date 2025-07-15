@@ -29,8 +29,6 @@ async def on_message(message):
     # AIChatスレッド内でのみ処理を行う
     if not isinstance(message.channel, discord.Thread):
         return
-    if "AIChat - " not in discord.Thread.name:
-        return
 
     user_id = message.author.id
 
