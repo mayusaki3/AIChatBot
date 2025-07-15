@@ -1,10 +1,11 @@
+import os
+import sys
 import json
 import discord
 from discord import app_commands, Interaction
 from ai.chatgpt.validator import is_valid_openai_key, is_chat_model_available
-from common.session.user_session_manager import UserSessionManager
-
-session_manager = UserSessionManager()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+from common.session.user_session_manager import session_manager
 
 HELP_TEXT = {
     "usage": "/ac_auth <file>",
@@ -44,8 +45,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
             return
 
         # 保存（ユーザーごとのセッション管理）
-        user_id = str(interaction.user.id)
-        session_manager.set_session(user_id, auth_json)
+        session_manager.set_session(interaction.user.id, auth_json)
 
         await interaction.followup.send("✅ 認証情報を登録しました", ephemeral=True)
 
