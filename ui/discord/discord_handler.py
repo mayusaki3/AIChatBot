@@ -1,11 +1,14 @@
 import os
+import sys
 import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
-from common.session.user_session_manager import UserSessionManager
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
+from common.session.user_session_manager import session_manager
 from dotenv import load_dotenv
 from common.utils import thread_utils
 from ui.discord.commands.load_commands import load_commands
+from ai.chatgpt.chatgpt_api import call_chatgpt
 
 load_dotenv()
 
@@ -17,7 +20,6 @@ GUILD_OBJ = discord.Object(id=int(raw_gid)) if USE_GUILD else None
 service_name = "discord"
 client = discord.Client(intents=discord.Intents.all())
 tree = app_commands.CommandTree(client)
-session_manager = UserSessionManager()
 
 # Discordメッセージ送信イベント
 @client.event
@@ -25,29 +27,20 @@ async def on_message(message):
     # メッセージがボットからのものであれば無視
     if message.author.bot:
         return
-        
-    # AIChatスレッド内でのみ処理を行う
-    if not isinstance(message.channel, discord.Thread):
+
+    # AIチャットスレッド以外は無視
+    thread = message.channel
+    if isinstance(thread, Thread):
+        guild_id = str(message.guild.id)
+        if not thread_utils.is_thread_managed(service_name, guild_id, thread.id):
+            return
+    else:
         return
 
-    user_id = message.author.id
-
-    # 認証ファイルアップロード処理
-    if message.attachments:
-        for attachment in message.attachments:
-            if attachment.filename.endswith(".json"):
-                content = await attachment.read()
-                try:
-                    auth_json = json.loads(content)
-                    session_manager.set_session(user_id, auth_json)
-                    await message.channel.send("✅ 認証情報を登録しました。")
-                except Exception as e:
-                    await message.channel.send(f"❌ 認証情報の登録に失敗: {e}")
-                return
-
     # 認証情報チェック
+    user_id = message.author.id
     if not session_manager.has_session(user_id):
-        await message.channel.send("⚠️ 先に認証ファイル（JSON）をアップロードしてください。")
+        await message.channel.send("⚠️ 認証情報を /ac_auth で登録してください。")
         return
 
     # メッセージをAIに送信
@@ -55,7 +48,7 @@ async def on_message(message):
     if auth["provider"] == "openai":
         reply = await call_chatgpt(message.content, auth["api_key"], auth["model"])
     else:
-        reply = f"❌ 未対応のプロバイダ: {auth['provider']}"
+        return
 
     await message.channel.send(reply)
 
