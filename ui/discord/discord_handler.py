@@ -47,6 +47,8 @@ async def on_message(message):
 
     # メッセージをコンテキストに追加
     author_name = message.author.display_name
+    if not context_manager.is_initialized(thread.id):
+        await context_manager.ensure_initialized(thread)
     context_manager.append_context(thread.id, f"{author_name}: {message.content}")
     context_list = context_manager.get_context(thread.id)
 
