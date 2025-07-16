@@ -2,6 +2,7 @@
 class ThreadContextManager:
     def __init__(self):
         self.contexts = {}  # thread_id -> list of messages
+        self.initialized_threads = set()
 
     # スレッドIDごとにコンテキストを取得
     def get_context(self, thread_id: str) -> list[str]:
@@ -24,6 +25,3 @@ class ThreadContextManager:
     def has_context(self, thread_id: str) -> bool:
         thread_id = str(thread_id)
         return thread_id in self.contexts
-
-# シングルトンとして使うインスタンス
-context_manager = ThreadContextManager()

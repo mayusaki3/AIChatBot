@@ -3,7 +3,6 @@ import sys
 import discord
 from discord import app_commands, Interaction
 from discord_handler import service_name
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from common.session.user_session_manager import session_manager
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from common.utils.image_model_manager import is_image_model_supported, remove_image_supported_model

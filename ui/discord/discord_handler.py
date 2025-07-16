@@ -4,13 +4,12 @@ import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
 from dotenv import load_dotenv
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from common.session.user_session_manager import session_manager
-from common.session.thread_context_manager import context_manager
 from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.commands.load_commands import load_commands
+from ui.discord.discord_thread_context import context_manager
 from ai.openai.openai_api import call_chatgpt
 
 load_dotenv()

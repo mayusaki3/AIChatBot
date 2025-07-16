@@ -5,7 +5,6 @@ import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord_handler import service_name
 from typing import Optional
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from common.utils.thread_utils import add_thread_to_server
 
 HELP_TEXT = {
