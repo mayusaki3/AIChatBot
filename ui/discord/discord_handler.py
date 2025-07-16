@@ -6,8 +6,10 @@ from discord.ext import commands
 from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from common.session.user_session_manager import session_manager
+from common.session.thread_context_manager import context_manager
 from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
+from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.commands.load_commands import load_commands
 from ai.openai.openai_api import call_chatgpt
 
@@ -44,12 +46,23 @@ async def on_message(message):
         await message.channel.send("⚠️ 認証情報を /ac_auth で登録してください。")
         return
 
+    # メッセージをコンテキストに追加
+    author_name = message.author.display_name
+    context_manager.append_context(thread.id, f"{author_name}: {message.content}")
+    context_list = context_manager.get_context(thread.id)
+
     # メッセージをAIに送信
-    auth = session_manager.get_session(user_id)
-    if auth["provider"] == "openai":
+    user_auth = session_manager.get_session(user_id)
+    imageuse =is_image_model_supported(user_auth)
+
+    # OpenAIの場合
+    if user_auth["provider"] == "openai":
         async with message.channel.typing():
-            reply = await call_chatgpt(message.content, auth["api_key"], auth["model"])
+            reply = await call_chatgpt(context_list, user_auth["api_key"], user_auth["model"])
+            # レスポンスをコンテキストに追加
             await message.channel.send(reply)
+            context_manager.append_context(thread.id, f"AIChatBot: {reply}")
+
     return
 
 # スレッド削除イベント
