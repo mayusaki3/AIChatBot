@@ -1,9 +1,12 @@
+import os
+import sys
 import datetime
 import discord
-from typing import Optional
 from discord import app_commands, Interaction, Thread, ChannelType
-from common.utils.thread_utils import add_thread_to_server
 from discord_handler import service_name
+from typing import Optional
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+from common.utils.thread_utils import add_thread_to_server
 
 HELP_TEXT = {
     "usage": "/ac_newchat <title> <private>",

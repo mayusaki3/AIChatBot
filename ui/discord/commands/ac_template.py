@@ -1,6 +1,6 @@
+from pathlib import Path
 import discord
 from discord import app_commands, Interaction
-from pathlib import Path
 
 HELP_TEXT = {
     "description": "認証情報設定用テンプレート（JSON）をダウンロードします。",

@@ -3,12 +3,13 @@ import sys
 import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
+from dotenv import load_dotenv
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
 from common.session.user_session_manager import session_manager
-from dotenv import load_dotenv
 from common.utils import thread_utils
+from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from ui.discord.commands.load_commands import load_commands
-from ai.chatgpt.chatgpt_api import call_chatgpt
+from ai.openai.openai_api import call_chatgpt
 
 load_dotenv()
 
@@ -46,11 +47,23 @@ async def on_message(message):
     # メッセージをAIに送信
     auth = session_manager.get_session(user_id)
     if auth["provider"] == "openai":
-        reply = await call_chatgpt(message.content, auth["api_key"], auth["model"])
-    else:
-        return
+        async with message.channel.typing():
+            reply = await call_chatgpt(message.content, auth["api_key"], auth["model"])
+            await message.channel.send(reply)
+    return
 
-    await message.channel.send(reply)
+# スレッド削除イベント
+@client.event
+async def on_thread_delete(thread: discord.Thread):
+    thread_id = str(thread.id)
+    guild_id = str(thread.guild.id)
+
+    if is_thread_managed(service_name, guild_id, thread.id):
+        try:
+            remove_thread_from_server(service_name, guild_id, thread.id)
+            print(f"✅ AIチャット対象からスレッド {thread_id} を削除しました。")
+        except Exception as e:
+            print(f"❌ AIチャット対象からスレッド {thread_id} が削除できませんでした: {e}")
 
 # Bot起動イベント
 @client.event

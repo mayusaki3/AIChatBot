@@ -2,11 +2,11 @@ import os
 import sys
 import discord
 from discord import app_commands, Interaction, Thread
-from common.utils.thread_utils import is_thread_managed
-from common.session.user_session_manager import UserSessionManager
 from discord_handler import service_name
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from common.session.user_session_manager import session_manager
+from common.utils.thread_utils import is_thread_managed
+from common.utils.image_model_manager import is_image_model_supported
 
 HELP_TEXT = {
     "usage": "/ac_status",
@@ -30,6 +30,8 @@ async def ac_status_command(interaction: Interaction):
     if user_auth:
         auth_provider = user_auth.get("provider", "未登録")
         auth_model = user_auth.get("model", "未登録")
+        if is_image_model_supported(user_auth):
+            auth_model += "🖼️"
         msg += f"🧑‍💻 現在の認証情報［ {auth_provider} / {auth_model} ］"
     else:
         msg += "⚠️ AIと会話するには /ac_auth で認証情報を登録してください。"

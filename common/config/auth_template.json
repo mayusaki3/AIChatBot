@@ -1,0 +1,5 @@
+{
+  "openai_api_key": "sk-ここにあなたのOpenAI APIキーを入力",
+  "user_name": "your_discord_username",
+  "log_channel_id": "123456789012345678"
+}

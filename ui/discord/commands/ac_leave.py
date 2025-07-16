@@ -1,10 +1,10 @@
 import os
 import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 import discord
 from discord import app_commands, Interaction
-from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from discord_handler import service_name
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
+from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 
 HELP_TEXT = {
     "usage": "/ac_leave",

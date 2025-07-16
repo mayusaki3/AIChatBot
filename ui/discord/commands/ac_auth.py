@@ -3,9 +3,9 @@ import sys
 import json
 import discord
 from discord import app_commands, Interaction
-from ai.chatgpt.validator import is_valid_openai_key, is_chat_model_available
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 from common.session.user_session_manager import session_manager
+from ai.openai.validator import is_valid_openai_key, is_chat_model_available
 
 HELP_TEXT = {
     "usage": "/ac_auth <file>",

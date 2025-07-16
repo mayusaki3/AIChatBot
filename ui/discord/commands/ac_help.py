@@ -1,7 +1,7 @@
 import discord
-from discord import app_commands
-import importlib.util
 import os
+import importlib.util
+from discord import app_commands
 
 HELP_TEXT = {
     "usage": "/ac_help",
