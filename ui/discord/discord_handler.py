@@ -80,6 +80,20 @@ async def on_thread_delete(thread: discord.Thread):
         except Exception as e:
             print(f"❌ AIチャット対象からスレッド {thread_id} が削除できませんでした: {e}")
 
+# メッセージ変更イベント
+@client.event
+async def on_message_edit(before, after):
+    if before.author.bot:
+        return
+    print(f"🔄 メッセージが編集されました: {before.author.name} {before.content} ⇒ {after.author.name} {after.content}")
+    context_manager.reset_context(before.channel.id)
+
+# メッセージ削除イベント
+@client.event
+async def on_message_delete(message):
+    print(f"❌ メッセージが削除されました: {message.content}")
+    context_manager.reset_context(message.channel.id)
+
 # Bot起動イベント
 @client.event
 async def on_ready():

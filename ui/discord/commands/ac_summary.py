@@ -29,21 +29,28 @@ async def ac_summarycommand(interaction: Interaction):
         await interaction.followup.send("⚠️ 認証情報を /ac_auth で登録してください。")
         return
 
+    if not context_manager.is_initialized(thread.id):
+        await context_manager.ensure_initialized(thread)
+
     # メッセージをAIに送信
     user_auth = session_manager.get_session(user_id)
     context_list = context_manager.get_context(thread.id)
-    context_list.append(f"AIChatBot: ここまで要約して")
+    message_list = []
+    message_list.append(f"AIChatBot: {user_auth['summary_prompt']}\n")
+    for message in context_list:
+        message_list.append(message)
 
     # OpenAIの場合
     reply = ""
     if user_auth["provider"] == "OpenAI":
-        reply = await call_chatgpt(context_list, user_auth["api_key"], user_auth["model"])
+        reply = await call_chatgpt(message_list, user_auth["api_key"], user_auth["model"])
 
     await thread.send(
         f"💬/ac_summary: 要約した内容で新しくトピックを始めます。\n"
         f"・取り消す場合は、このメッセージを削除してから /ac_loadtopic を実行してください。\n"
         f"{reply}"
     )
+    context_manager.reset_context(thread.id)
     await interaction.followup.send("✅ ここまでの内容を要約しました。")
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
