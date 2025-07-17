@@ -1,9 +1,9 @@
 import datetime
 import discord
-from typing import Optional
 from discord import app_commands, Interaction, Thread, ChannelType
-from common.utils.thread_utils import add_thread_to_server
 from discord_handler import service_name
+from typing import Optional
+from common.utils.thread_utils import add_thread_to_server
 
 HELP_TEXT = {
     "usage": "/ac_newchat <title> <private>",
@@ -45,8 +45,8 @@ async def ac_newchat_command(interaction: Interaction, title: Optional[str] = No
         )
         add_thread_to_server(service_name, interaction.guild_id, thread.id)
         await thread.send(
-            f"💬 このスレッドは {interaction.user.mention} によって作成されました。\n"
-            f"・このスレッド内での発言は、発言者が登録した認証情報に基づいて AI に送信・応答されます。"
+            f"💬/ac_newchat: このスレッドは {interaction.user.mention} によって作成されました。\n"
+            f"・このスレッド内でのメッセージは、投稿者が登録した認証情報に基づいて AI に送信・応答されます。"
         )
 
     except Exception as e:

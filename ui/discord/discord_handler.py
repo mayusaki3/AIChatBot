@@ -3,12 +3,14 @@ import sys
 import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")))
-from common.session.user_session_manager import session_manager
 from dotenv import load_dotenv
+from common.session.user_session_manager import session_manager
 from common.utils import thread_utils
+from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
+from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.commands.load_commands import load_commands
-from ai.chatgpt.chatgpt_api import call_chatgpt
+from ui.discord.discord_thread_context import context_manager
+from ai.openai.openai_api import call_chatgpt
 
 load_dotenv()
 
@@ -37,20 +39,46 @@ async def on_message(message):
     else:
         return
 
+    # メッセージをコンテキストに追加
+    author_name = message.author.display_name
+    if not context_manager.is_initialized(thread.id):
+        await context_manager.ensure_initialized(thread)
+    else:
+        context_manager.append_context(thread.id, f"{author_name}: {message.content}")
+    context_list = context_manager.get_context(thread.id)
+
     # 認証情報チェック
     user_id = message.author.id
     if not session_manager.has_session(user_id):
-        await message.channel.send("⚠️ 認証情報を /ac_auth で登録してください。")
+        await message.reply("⚠️ 認証情報を /ac_auth で登録してください。")
         return
 
     # メッセージをAIに送信
-    auth = session_manager.get_session(user_id)
-    if auth["provider"] == "openai":
-        reply = await call_chatgpt(message.content, auth["api_key"], auth["model"])
-    else:
-        return
+    user_auth = session_manager.get_session(user_id)
+    imageuse =is_image_model_supported(user_auth)
 
-    await message.channel.send(reply)
+    # OpenAIの場合
+    if user_auth["provider"] == "OpenAI":
+        async with message.channel.typing():
+            reply = await call_chatgpt(context_list, user_auth["api_key"], user_auth["model"])
+            # レスポンスをコンテキストに追加
+            await message.channel.send(reply)
+            context_manager.append_context(thread.id, f"AIChatBot: {reply}")
+
+    return
+
+# スレッド削除イベント
+@client.event
+async def on_thread_delete(thread: discord.Thread):
+    thread_id = str(thread.id)
+    guild_id = str(thread.guild.id)
+
+    if is_thread_managed(service_name, guild_id, thread.id):
+        try:
+            remove_thread_from_server(service_name, guild_id, thread.id)
+            print(f"✅ AIチャット対象からスレッド {thread_id} を削除しました。")
+        except Exception as e:
+            print(f"❌ AIチャット対象からスレッド {thread_id} が削除できませんでした: {e}")
 
 # Bot起動イベント
 @client.event

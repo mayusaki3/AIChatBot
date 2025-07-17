@@ -1,11 +1,7 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 import discord
 from discord import app_commands, Interaction, Thread, ChannelType, Forbidden, HTTPException
-
-from common.utils.thread_utils import load_server_threads
 from discord_handler import service_name
+from common.utils.thread_utils import load_server_threads
 
 HELP_TEXT = {
     "usage": "/ac_threads",

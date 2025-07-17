@@ -1,10 +1,7 @@
-import os
-import sys
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../")))
 import discord
-from discord import app_commands, Interaction
-from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
+from discord import app_commands, Interaction, Thread
 from discord_handler import service_name
+from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 
 HELP_TEXT = {
     "usage": "/ac_leave",
@@ -13,31 +10,36 @@ HELP_TEXT = {
 
 @app_commands.command(name="ac_leave", description=HELP_TEXT["description"])
 async def ac_leave_command(interaction: Interaction):
-    thread = interaction.channel
-    if thread is None or not hasattr(thread, "remove_user"):
-        await interaction.response.send_message("❌ スレッド外では実行できません。", ephemeral=True)
+    await interaction.response.defer(thinking=True, ephemeral=True)
+    if not isinstance(interaction.channel, Thread):
+        await interaction.followup.send("❌ スレッド外では実行できません。", ephemeral=True)
         return
 
+    thread = interaction.channel
     if not is_thread_managed(service_name, interaction.guild_id, thread.id):
-        await interaction.response.send_message("⚠️ AIChatBotはこのスレッドに参加していません。", ephemeral=True)
+        await interaction.followup.send("⚠️ AIChatBotはこのスレッドに参加していません。", ephemeral=True)
         return
 
     try:
+        sent_msg = await thread.send(
+            f"💬/ac_leave: AIChatBotが退出しました。\n"
+            f"・以後のスレッド内でのメッセージは、次の条件を除き AI に送信されることはありません。\n"
+            f"・スレッド内のメッセージは、/ac_loadtopic, /ac_summary の処理対象になる場合があります。"
+        )
         if thread.owner_id != interaction.client.user.id:
             try:
                 await thread.remove_user(interaction.client.user)
             except discord.Forbidden:
-                await interaction.response.send_message("⚠️ AIChatBotを退出させる権限がありません。", ephemeral=True)
+                if sent_msg:
+                    await sent_msg.delete()
+                await interaction.followup.send("⚠️ AIChatBotを退出させる権限がありません。", ephemeral=True)
                 return
+
         remove_thread_from_server(service_name, interaction.guild_id, thread.id)
-        await interaction.response.send_message("👋 AIChatBotはスレッドから退出しました。", ephemeral=True)
-        await thread.send(
-            f"💬 AIChatBotが退出しました。\n"
-            f"・以後のスレッド内での発言は、AI に送信されることはありません。"
-        )
+        await interaction.followup.send("👋 AIChatBotはスレッドから退出しました。", ephemeral=True)
 
     except Exception as e:
-        await interaction.response.send_message(f"❌ AIChatBotの退出に失敗しました: {e}", ephemeral=True)
+        await interaction.followup.send(f"❌ AIChatBotの退出に失敗しました: {e}", ephemeral=True)
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
     if guild:

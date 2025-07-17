@@ -1,7 +1,7 @@
+import os
+import importlib.util
 import discord
 from discord import app_commands
-import importlib.util
-import os
 
 HELP_TEXT = {
     "usage": "/ac_help",
@@ -23,9 +23,7 @@ async def ac_help_command(interaction: discord.Interaction):
                 if isinstance(help_text, dict):
                     usage = help_text.get("usage", f"/{module_name}")
                     desc = help_text.get("description", "(未定義)")
-                    help_messages.append(f"**/{module_name}**\n使い方: {usage}\n説明: {desc}")
-                else:
-                    help_messages.append(f"**/{module_name}**\n使い方: /{module_name}\n説明: (ヘルプ未定義)")
+                    help_messages.append(f"**{usage}**\n説明: {desc}")
             except Exception as e:
                 help_messages.append(f"**/{module_name}**\nエラー: {e}")
 
@@ -34,7 +32,7 @@ async def ac_help_command(interaction: discord.Interaction):
         description="\n\n".join(help_messages),
         color=0x00ffcc
     )
-    await interaction.response.send_message(embed=embed)
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
     if guild:
