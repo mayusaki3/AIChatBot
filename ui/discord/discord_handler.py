@@ -39,25 +39,26 @@ async def on_message(message):
     else:
         return
 
-    # 認証情報チェック
-    user_id = message.author.id
-    if not session_manager.has_session(user_id):
-        await message.channel.send("⚠️ 認証情報を /ac_auth で登録してください。")
-        return
-
     # メッセージをコンテキストに追加
     author_name = message.author.display_name
     if not context_manager.is_initialized(thread.id):
         await context_manager.ensure_initialized(thread)
-    context_manager.append_context(thread.id, f"{author_name}: {message.content}")
+    else:
+        context_manager.append_context(thread.id, f"{author_name}: {message.content}")
     context_list = context_manager.get_context(thread.id)
+
+    # 認証情報チェック
+    user_id = message.author.id
+    if not session_manager.has_session(user_id):
+        await message.reply("⚠️ 認証情報を /ac_auth で登録してください。")
+        return
 
     # メッセージをAIに送信
     user_auth = session_manager.get_session(user_id)
     imageuse =is_image_model_supported(user_auth)
 
     # OpenAIの場合
-    if user_auth["provider"] == "openai":
+    if user_auth["provider"] == "OpenAI":
         async with message.channel.typing():
             reply = await call_chatgpt(context_list, user_auth["api_key"], user_auth["model"])
             # レスポンスをコンテキストに追加

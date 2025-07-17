@@ -4,6 +4,7 @@ from typing import List
 
 # 画像サポートモデル情報ファイルのパスを取得
 def _get_json_path(provider: str) -> str:
+    provider = provider.lower()
     path = os.path.join(os.path.dirname(__file__), "../../", f"ai/{provider}/data/")
     return os.path.abspath(os.path.join(path, "image_supported_models.json"))
 

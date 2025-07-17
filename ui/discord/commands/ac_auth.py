@@ -1,5 +1,3 @@
-import os
-import sys
 import json
 import discord
 from discord import app_commands, Interaction
@@ -29,7 +27,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                 await interaction.followup.send(f"❌ `{field}` が含まれていません", ephemeral=True)
                 return
 
-        if auth_json["provider"] == "openai":
+        if auth_json["provider"] == "OpenAI":
             api_key = auth_json["api_key"].strip()
             model_name = auth_json["model"].strip()
             result = is_valid_openai_key(api_key)
@@ -40,7 +38,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                 await interaction.followup.send(f"❌ モデル `{model_name}` は利用できません", ephemeral=True)
                 return
         else:
-            await interaction.followup.send("❌ 現在は provider='openai' のみ対応しています", ephemeral=True)
+            await interaction.followup.send("❌ 現在は provider='OpenAI' のみ対応しています", ephemeral=True)
             return
 
         # 保存（ユーザーごとのセッション管理）

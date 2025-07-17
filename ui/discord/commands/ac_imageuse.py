@@ -1,10 +1,6 @@
-import os
-import sys
 import discord
 from discord import app_commands, Interaction
-from discord_handler import service_name
 from common.session.user_session_manager import session_manager
-from common.utils.thread_utils import add_thread_to_server, is_thread_managed
 from common.utils.image_model_manager import is_image_model_supported, add_image_supported_model
 
 HELP_TEXT = {
@@ -17,7 +13,7 @@ async def ac_imageuse_command(interaction: Interaction):
     user_id = interaction.user.id
     user_auth = session_manager.get_session(user_id)
     if not user_auth:
-        await interaction.response.send_message("⚠️ 認証情報を /ac_auth で登録してください。")
+        await interaction.response.send_message("⚠️ 認証情報を /ac_auth で登録してください。", ephemeral=True)
         return
 
     model = user_auth["model"]
@@ -27,7 +23,7 @@ async def ac_imageuse_command(interaction: Interaction):
 
     try:
         add_image_supported_model(user_auth)
-        await interaction.response.send_message("✅ モデル {model} を画像対応にマークしました。", ephemeral=True)
+        await interaction.response.send_message(f"✅ モデル {model} を画像対応にマークしました。", ephemeral=True)
 
     except Exception as e:
         await interaction.response.send_message(f"❌ モデル {model} を画像対応マークに失敗しました: {e}", ephemeral=True)

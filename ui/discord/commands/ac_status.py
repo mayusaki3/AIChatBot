@@ -1,5 +1,3 @@
-import os
-import sys
 import discord
 from discord import app_commands, Interaction, Thread
 from discord_handler import service_name
@@ -35,7 +33,7 @@ async def ac_status_command(interaction: Interaction):
         auth_provider = user_auth.get("provider", "未登録")
         auth_model = user_auth.get("model", "未登録")
         if is_image_model_supported(user_auth):
-            auth_model += "🖼️"
+            auth_model += " 🖼️"
         msg += f"🧑‍💻 現在の認証情報［ {auth_provider} / {auth_model} ］"
     else:
         msg += "⚠️ AIと会話するには /ac_auth で認証情報を登録してください。"
@@ -43,15 +41,17 @@ async def ac_status_command(interaction: Interaction):
     # AIチャットスレッドのコンテキスト状態
     if managed:
         if not context_manager.is_initialized(thread.id):
-            print(f"[INIT] {thread.name}")  
+            print(f"[INIT ] {thread.name}")  
             await context_manager.ensure_initialized(thread)
+        else:
+            print(f"[READY] {thread.name}")
         context = context_manager.get_context(thread.id)
         if context:
             msg += f"\n📜 スレッドのコンテキスト履歴は {len(context)} 件あります。"
-            print(f"[START] {thread.name}")       
+            print(f"\n[START] {thread.name}")
             for mm in context:
-                print(f" - {mm}")
-            print(f"[END] {thread.name}")         
+                print(f"🟡{mm}")
+            print(f"[END  ] {thread.name}")
         else:
             msg += "\n📜 スレッドのコンテキスト履歴はありません。"
 

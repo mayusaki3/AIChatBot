@@ -1,5 +1,5 @@
 {
-    "provider": "openai",
+    "provider": "OpenAI",
     "api_key": "ここにあなたのOpenAI APIキーを入力",
     "model": "gpt-4o"
 }

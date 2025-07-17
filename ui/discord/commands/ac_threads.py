@@ -1,5 +1,3 @@
-import os
-import sys
 import discord
 from discord import app_commands, Interaction, Thread, ChannelType, Forbidden, HTTPException
 from discord_handler import service_name
