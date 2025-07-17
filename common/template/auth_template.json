@@ -1,5 +1,7 @@
 {
     "provider": "OpenAI",
     "api_key": "ここにあなたのOpenAI APIキーを入力",
-    "model": "gpt-4o"
+    "model": "gpt-4o",
+    "max_tokens": 1500,
+    "summary_prompt": "以下の会話ログを、内容がわかるよう簡潔に要約してください。返答には「了解しました」や「要約します」などの前置きは不要です。要約だけを返してください。"
 }

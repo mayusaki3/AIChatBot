@@ -41,17 +41,17 @@ async def ac_status_command(interaction: Interaction):
     # AIチャットスレッドのコンテキスト状態
     if managed:
         if not context_manager.is_initialized(thread.id):
-            print(f"[INIT ] {thread.name}")  
+            # print(f"[INIT ] {thread.name}")  
             await context_manager.ensure_initialized(thread)
-        else:
-            print(f"[READY] {thread.name}")
+        # else:
+            # print(f"[READY] {thread.name}")
         context = context_manager.get_context(thread.id)
         if context:
             msg += f"\n📜 スレッドのコンテキスト履歴は {len(context)} 件あります。"
-            print(f"\n[START] {thread.name}")
-            for mm in context:
-                print(f"🟡{mm}")
-            print(f"[END  ] {thread.name}")
+            # print(f"[START] {thread.name}")
+            # for mm in context:
+            #     print(f"🟡{mm}")
+            # print(f"[END  ] {thread.name}\n")
         else:
             msg += "\n📜 スレッドのコンテキスト履歴はありません。"
 

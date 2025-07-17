@@ -57,6 +57,15 @@ class DiscordThreadContextManager:
         thread_id = str(thread_id)
         if not thread_id in self.initialized_threads:
             self.initialized_threads.add(thread_id)
+            print(f"- [INIT ]: {thread_id}")
+        self.manager.clear_context(thread_id)
+
+    # スレッドIDごとにコンテキストをリセット
+    def reset_context(self, thread_id: str):
+        thread_id = str(thread_id)
+        if thread_id in self.initialized_threads:
+            self.initialized_threads.remove(thread_id)
+            print(f"- [RESET]: {thread_id}")
         self.manager.clear_context(thread_id)
 
     # スレッドIDが初期化されているか確認

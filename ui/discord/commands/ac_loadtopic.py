@@ -6,7 +6,7 @@ from ui.discord.discord_thread_context import context_manager
 
 HELP_TEXT = {
     "usage": "/ac_loadtopic",
-    "description": "現在のトピックを読み直します。"
+    "description": "現在のトピックを読み直します。過去メッセージを編集/削除した場合に使用します。"
 }
 
 @app_commands.command(name="ac_loadtopic", description=HELP_TEXT["description"])
