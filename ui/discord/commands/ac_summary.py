@@ -35,6 +35,9 @@ async def ac_summarycommand(interaction: Interaction):
     # メッセージをAIに送信
     user_auth = session_manager.get_session(user_id)
     context_list = context_manager.get_context(thread.id)
+    if len(context_list) == 0:
+        await interaction.followup.send("❌ 要約する内容がありません。", ephemeral=True)
+        return
     message_list = []
     message_list.append(f"AIChatBot: {user_auth['summary_prompt']}\n")
     for message in context_list:

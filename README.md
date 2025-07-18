@@ -42,6 +42,8 @@ AIChatBot は以下の /コマンドを提供しています：
 | `/ac_status`                   | 使用中のAIチャットの状態を表示します。                                 |
 | `/ac_threads`                  | AIチャットと会話中のスレッド一覧を表示します。                         |
 | `/ac_newchat [title] [Private]`| 新しいAIチャットスレッドを作成します（件名は任意）                     |
+| `/ac_shareauth`                | 認証情報が未登録の人に現在の認証情報を共有します。                     |
+| `/ac_removeauth`               | 認証情報の共有を解除します。                                           |
 
 [^1]: 画像対応マークがついているモデルとのチャットでは、添付された画像も送信します。
 
@@ -73,3 +75,29 @@ AIChatBot は以下の /コマンドを提供しています：
 3. 利用するAIチャットのファイルを `/ac_auth` コマンドでアップロードします。  
    AIチャットを切り替える場合は、別のファイルをアップロードします。
 
+
+## 招待リンクの設定
+
+AIChatBotの招待リンクの作成方法は以下の通りです。
+   1. [Discord Developer Portal](https://discord.com/developers/applications) にアクセス
+   2. My Applicationsで AIChatBot を選択
+   3. 左メニュー「OAuth2」→「OAuth2 URL Generator」を表示
+   4. 「scopes」で以下のパーミッションをチェック  
+     - applications.commands  
+     - bot
+   5. 「Bot Permissions」で以下のパーミッションをチェック  
+     - View Channels  
+     - Send Messages  
+     - Create Public Threads  
+     - Create Private Threads  
+     - Send Messages in threads  
+     - Manage Threads  
+     - Read Message History
+     - Use Slash Commands
+   6. 「Generated URL」でコピーしてブラウザで開き、サーバーを選択して招待
+
+AIChatBot
+https://discord.com/oauth2/authorize?client_id=1392390825148944406&permissions=397284543488&integration_type=0&scope=bot+applications.commands
+
+AIChatBot Dev
+https://discord.com/oauth2/authorize?client_id=1395576546747744357&permissions=397284543488&integration_type=0&scope=bot+applications.commands
