@@ -36,15 +36,18 @@ AIChatBot は以下の /コマンドを提供しています：
 |--------------------------------|------------------------------------------------------------------------|
 | `/ac_help`                     | すべての /ac コマンドのヘルプを表示します。                            |
 | `/ac_template`                 | 認証情報設定用テンプレート（JSON）をダウンロードします。               |
-| `/ac_auth [file]`              | 使用するAIチャットの認証情報を登録します。                             |
-| `/ac_imageuse`                 | 使用中のモデルに画像対応マークを付けます。 [^1]                        |
-| `/ac_imagenonuse`              | 使用中のモデルに画像非対応マークを付けます。 [^1]                      |
+| `/ac_auth [file]`              | 使用するAIチャットの認証情報を登録します。 [*1]                        |
+| `/ac_removeauth`               | 登録したAIチャットの認証情報を削除します。 [*1]                        |
+| `/ac_authsharing`              | 認証情報が未登録の人に現在の認証情報をサーバー単位で共有します。 [*1]  |
+| `/ac_authunsharing`            | サーバー単位で共有されている認証情報の共有を解除します。 [*1]          |
+| `/ac_imageuse`                 | 使用中のモデルに画像対応マークを付けます。 [*2]                        |
+| `/ac_imagenonuse`              | 使用中のモデルに画像非対応マークを付けます。 [*2]                      |
 | `/ac_status`                   | 使用中のAIチャットの状態を表示します。                                 |
 | `/ac_threads`                  | AIチャットと会話中のスレッド一覧を表示します。                         |
 | `/ac_newchat [title] [Private]`| 新しいAIチャットスレッドを作成します（件名は任意）                     |
 
-[^1]: 画像対応マークがついているモデルとのチャットでは、添付された画像も送信します。
-
+[*1]: 認証情報は「自分の認証情報」＞「共有された認証情報」の順に使用します。自分の認証情報のみ共有でき、誰の認証情報でも共有解除できます。
+[*2]: 画像対応マークがついているモデルとのチャットでは、添付された画像も送信します。
 
 | スレッド内コマンド             | 説明                                                                   |
 |--------------------------------|------------------------------------------------------------------------|
@@ -73,3 +76,29 @@ AIChatBot は以下の /コマンドを提供しています：
 3. 利用するAIチャットのファイルを `/ac_auth` コマンドでアップロードします。  
    AIチャットを切り替える場合は、別のファイルをアップロードします。
 
+
+## 招待リンクの設定
+
+AIChatBotの招待リンクの作成方法は以下の通りです。
+   1. [Discord Developer Portal](https://discord.com/developers/applications) にアクセス
+   2. My Applicationsで AIChatBot を選択
+   3. 左メニュー「OAuth2」→「OAuth2 URL Generator」を表示
+   4. 「scopes」で以下のパーミッションをチェック  
+     - bot  
+     - applications.commands  
+   5. 「Bot Permissions」で以下のパーミッションをチェック  
+     - View Channels  
+     - Send Messages  
+     - Create Public Threads  
+     - Create Private Threads  
+     - Send Messages in threads  
+     - Manage Threads  
+     - Read Message History
+     - Use Slash Commands  
+   6. 「Generated URL」でコピーしてブラウザで開き、サーバーを選択して招待
+
+AIChatBot
+https://discord.com/oauth2/authorize?client_id=1392390825148944406&permissions=397284543488&integration_type=0&scope=bot+applications.commands
+
+AIChatBot Dev
+https://discord.com/oauth2/authorize?client_id=1395576546747744357&permissions=397284543488&integration_type=0&scope=bot+applications.commands

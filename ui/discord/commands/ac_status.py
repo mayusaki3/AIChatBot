@@ -1,7 +1,8 @@
 import discord
 from discord import app_commands, Interaction, Thread
 from discord_handler import service_name
-from common.session.user_session_manager import session_manager
+from common.session.user_session_manager import user_session_manager
+from common.session.server_session_manager import server_session_manager
 from common.utils.thread_utils import is_thread_managed
 from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.discord_thread_context import context_manager
@@ -20,23 +21,42 @@ async def ac_status_command(interaction: Interaction):
     if isinstance(thread, Thread):
         # スレッドIDでスレッド情報取得（存在しない場合は None）
         if not is_thread_managed(service_name, interaction.guild_id, thread.id):
-            msg = "ℹ️ このスレッドでAIチャットを利用するには /ac_invite でAIChatBotを招待してください。\n"
+            msg = "ℹ️ このスレッドでAIチャットを利用するには /ac_invite でAIChatBotを招待してください。"
         else:
             managed = True
     else:
-        msg = "ℹ️ AIチャットはスレッド内でのみ利用できます。\n"
+        msg = "ℹ️ AIチャットはスレッド内でのみ利用できます。"
 
     # ユーザー認証情報の状態
     user_id = interaction.user.id
-    user_auth = session_manager.get_session(user_id)
+    guild_id = interaction.guild.id
+    guild = interaction.guild
+    server_auth = server_session_manager.get_session(guild_id)
+    if server_auth:
+        sharing_user_id = server_auth.get("user_id")
+        member = guild.get_member(sharing_user_id)
+        if not member:
+            member = await guild.fetch_member(sharing_user_id)
+        if member:
+            user_name = member.display_name
+        else:
+            user_name = f"id: {sharing_user_id}"
+        auth_provider = server_auth.get("provider", "未登録")
+        auth_model = server_auth.get("model", "未登録")
+        if is_image_model_supported(server_auth):
+            auth_model += " 🖼️"
+        msg += f"\nℹ️ {user_name} さんの認証情報［ {auth_provider} / {auth_model} ］が共有されています。"
+
+    user_auth = user_session_manager.get_session(user_id)
     if user_auth:
         auth_provider = user_auth.get("provider", "未登録")
         auth_model = user_auth.get("model", "未登録")
         if is_image_model_supported(user_auth):
             auth_model += " 🖼️"
-        msg += f"🧑‍💻 現在の認証情報［ {auth_provider} / {auth_model} ］"
+        msg += f"\n🧑‍💻 現在の認証情報［ {auth_provider} / {auth_model} ］"
     else:
-        msg += "⚠️ AIと会話するには /ac_auth で認証情報を登録してください。"
+        if not server_auth:
+            msg += "\n⚠️ AIと会話するには /ac_auth で認証情報を登録してください。"
 
     # AIチャットスレッドのコンテキスト状態
     if managed:

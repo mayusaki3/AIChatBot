@@ -1,6 +1,6 @@
 import discord
 from discord import app_commands, Interaction
-from common.session.user_session_manager import session_manager
+from common.session.user_session_manager import user_session_manager
 from common.utils.image_model_manager import is_image_model_supported, remove_image_supported_model
 
 HELP_TEXT = {
@@ -11,7 +11,7 @@ HELP_TEXT = {
 @app_commands.command(name="ac_imagenonuse", description=HELP_TEXT["description"])
 async def ac_imagenonuse_command(interaction: Interaction):
     user_id = interaction.user.id
-    user_auth = session_manager.get_session(user_id)
+    user_auth = user_session_manager.get_session(user_id)
     if not user_auth:
         await interaction.response.send_message("⚠️ 認証情報を /ac_auth で登録してください。", ephemeral=True)
         return

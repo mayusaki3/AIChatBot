@@ -19,7 +19,7 @@ class DiscordThreadContextManager:
         thread_id = str(thread.id)
         self.clear_context(thread_id)
         prefixes = ("⚠️ 認証情報を", "💬/ac_newchat:", "💬/ac_invite:", "💬/ac_leave:", "💬/ac_newtopic:", "💬/ac_summary:")
-        skip_prefixes = ("⚠️ 認証情報を", "💬/ac_invite:", "💬/ac_leave:")
+        skip_prefixes = ("⚠️ 認証情報を", "💬/ac_newchat:", "💬/ac_invite:", "💬/ac_leave:")
         messages = []
         async for msg in thread.history(limit=100, oldest_first=False):
             if msg.author.bot:

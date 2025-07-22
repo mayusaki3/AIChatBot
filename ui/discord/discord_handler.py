@@ -4,7 +4,8 @@ import discord
 from discord import app_commands, Interaction, Thread, ChannelType
 from discord.ext import commands
 from dotenv import load_dotenv
-from common.session.user_session_manager import session_manager
+from common.session.user_session_manager import user_session_manager
+from common.session.server_session_manager import server_session_manager
 from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from common.utils.image_model_manager import is_image_model_supported
@@ -20,7 +21,9 @@ USE_GUILD = bool(raw_gid and not raw_gid.startswith("#"))
 GUILD_OBJ = discord.Object(id=int(raw_gid)) if USE_GUILD else None
 
 service_name = "discord"
-client = discord.Client(intents=discord.Intents.all())
+intents = discord.Intents.all()
+intents.members = True
+client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
 
 # Discordメッセージ送信イベント
@@ -49,18 +52,23 @@ async def on_message(message):
 
     # 認証情報チェック
     user_id = message.author.id
-    if not session_manager.has_session(user_id):
-        await message.reply("⚠️ 認証情報を /ac_auth で登録してください。")
-        return
+    guild_id = message.guild.id
+    if not user_session_manager.has_session(user_id):
+        if not server_session_manager.has_session(guild_id):
+            await message.reply("⚠️ 認証情報を /ac_auth で登録してください。")
+            return
 
     # メッセージをAIに送信
-    user_auth = session_manager.get_session(user_id)
-    imageuse =is_image_model_supported(user_auth)
+    if server_session_manager.has_session(guild_id):
+        auth_data = server_session_manager.get_session(guild_id)
+    else:
+        auth_data = user_session_manager.get_session(user_id)
+    imageuse =is_image_model_supported(auth_data)
 
     # OpenAIの場合
-    if user_auth["provider"] == "OpenAI":
+    if auth_data["provider"] == "OpenAI":
         async with message.channel.typing():
-            reply = await call_chatgpt(context_list, user_auth["api_key"], user_auth["model"])
+            reply = await call_chatgpt(context_list, auth_data["api_key"], auth_data["model"])
             # レスポンスをコンテキストに追加
             await message.channel.send(reply)
             context_manager.append_context(thread.id, f"AIChatBot: {reply}")
