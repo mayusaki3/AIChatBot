@@ -1,7 +1,7 @@
 import json
 import discord
 from discord import app_commands, Interaction
-from common.session.user_session_manager import session_manager
+from common.session.user_session_manager import user_session_manager
 from ai.openai.validator import is_valid_openai_key, is_chat_model_available
 
 HELP_TEXT = {
@@ -42,7 +42,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
             return
 
         # 保存（ユーザーごとのセッション管理）
-        session_manager.set_session(interaction.user.id, auth_json)
+        user_session_manager.set_session(interaction.user.id, auth_json)
 
         await interaction.followup.send("✅ 認証情報を登録しました", ephemeral=True)
 

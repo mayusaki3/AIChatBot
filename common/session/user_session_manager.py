@@ -1,15 +1,17 @@
 class UserSessionManager:
     def __init__(self):
-        self.sessions = {}  # user_id: {provider, api_key, model}
+        self.sessions = {}  # user_id: {provider, api_key, model, user_id}
 
     # ユーザーIDごとに認証情報を登録。
     def set_session(self, user_id: int, auth_data: dict):
         user_id = str(user_id)
-        if "provider" not in auth_data:
-            auth_data["provider"] = "openai"  # デフォルトプロバイダ
-        if "model" not in auth_data:
-            auth_data["model"] = "gpt-3.5-turbo"  # デフォルトモデル
+        auth_data["user_id"] = user_id
         self.sessions[user_id] = auth_data
+
+   # 指定ユーザーIDのセッション情報を削除。
+    def clear_session(self, user_id: int):
+        user_id = str(user_id)
+        self.sessions[user_id] = []
 
     # 指定ユーザーのセッション情報を取得。
     def get_session(self, user_id: int):
@@ -22,4 +24,4 @@ class UserSessionManager:
         return user_id in self.sessions
 
 # シングルトンとして使うインスタンス
-session_manager = UserSessionManager()
+user_session_manager = UserSessionManager()

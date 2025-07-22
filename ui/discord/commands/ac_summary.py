@@ -1,7 +1,7 @@
 import discord
 from discord import app_commands, Interaction, Thread
 from discord_handler import service_name
-from common.session.user_session_manager import session_manager
+from common.session.user_session_manager import user_session_manager
 from common.utils.thread_utils import is_thread_managed
 from ui.discord.discord_thread_context import context_manager
 from ai.openai.openai_api import call_chatgpt
@@ -25,7 +25,7 @@ async def ac_summarycommand(interaction: Interaction):
 
     # 認証情報チェック
     user_id = interaction.user.id
-    if not session_manager.has_session(user_id):
+    if not user_session_manager.has_session(user_id):
         await interaction.followup.send("⚠️ 認証情報を /ac_auth で登録してください。")
         return
 
@@ -33,7 +33,7 @@ async def ac_summarycommand(interaction: Interaction):
         await context_manager.ensure_initialized(thread)
 
     # メッセージをAIに送信
-    user_auth = session_manager.get_session(user_id)
+    user_auth = user_session_manager.get_session(user_id)
     context_list = context_manager.get_context(thread.id)
     if len(context_list) == 0:
         await interaction.followup.send("❌ 要約する内容がありません。", ephemeral=True)
