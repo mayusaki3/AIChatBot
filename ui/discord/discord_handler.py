@@ -8,10 +8,11 @@ from common.session.user_session_manager import user_session_manager
 from common.session.server_session_manager import server_session_manager
 from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
-from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.commands.load_commands import load_commands
 from ui.discord.discord_thread_context import context_manager
 from ai.openai.openai_api import call_chatgpt
+import aiohttp
+import base64
 
 load_dotenv()
 
@@ -25,6 +26,14 @@ intents = discord.Intents.all()
 intents.members = True
 client = discord.Client(intents=intents)
 tree = app_commands.CommandTree(client)
+
+# 添付画像をbase64で取得
+async def fetch_image_as_base64(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                image_bytes = await resp.read()
+                return base64.b64encode(image_bytes).decode('utf-8')
 
 # Discordメッセージ送信イベント
 @client.event
@@ -63,12 +72,29 @@ async def on_message(message):
         auth_data = server_session_manager.get_session(guild_id)
     else:
         auth_data = user_session_manager.get_session(user_id)
-    imageuse =is_image_model_supported(auth_data)
+
+    # 添付画像がある場合はコンテキストに追加
+    # imageuse = is_image_model_supported(auth_data)
+    # if message.attachments and imageuse:
+    #     msg = "["
+    #     count = 0
+    #     for attachment in message.attachments:
+    #         if attachment.content_type and attachment.content_type.startswith("image/"):
+    #             image_base64 = await fetch_image_as_base64(attachment.url)
+    #             if image_base64:
+    #                 if count > 0:
+    #                     msg += ","
+    #                 msg += '{"type": "image_url","image_url": {"url": '
+    #                 msg += f"data:image/png;base64,{image_base64}"
+    #                 msg += '}'
+    #                 count += 1
+    #     msg += "]"
+    #     context_list.append(f"{msg}")
 
     # OpenAIの場合
-    if auth_data["provider"] == "OpenAI":
+    if auth_data["chat"]["provider"] == "OpenAI":
         async with message.channel.typing():
-            reply = await call_chatgpt(context_list, auth_data["api_key"], auth_data["model"])
+            reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
             # レスポンスをコンテキストに追加
             await message.channel.send(reply)
             context_manager.append_context(thread.id, f"AIChatBot: {reply}")

@@ -3,7 +3,6 @@ import discord
 from discord import app_commands, Interaction
 from common.session.user_session_manager import user_session_manager
 from common.session.server_session_manager import server_session_manager
-from common.utils.image_model_manager import is_image_model_supported
 
 HELP_TEXT = {
     "usage": "/ac_authsharing",
@@ -32,11 +31,10 @@ async def ac_authsharing_command(interaction: Interaction):
         return
 
     server_session_manager.set_session(guild_id, auth_data)
-    auth_provider = auth_data["provider"]
-    auth_model = auth_data["model"]
-    if is_image_model_supported(auth_data):
-        auth_model += " 🖼️"
-    await interaction.followup.send(f"{msg}✅ 現在の認証情報［ {auth_provider} / {auth_model} ］を共有しました", ephemeral=True)
+    auth = f"🗨️{auth_data['chat']['provider']}/{auth_data['chat']['model']}, "
+    auth += f"👀{auth_data['vision']['provider']}/{auth_data['vision']['model']}, "
+    auth += f"🖼️{auth_data['imagegen']['provider']}/{auth_data['imagegen']['model']}"
+    await interaction.followup.send(f"{msg}✅ 現在の認証情報［ {auth} ］を共有しました", ephemeral=True)
 
 def register(tree: app_commands.CommandTree, client: discord.Client, guild: discord.Object = None):
     if guild:

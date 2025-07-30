@@ -1,7 +1,25 @@
 {
-    "provider": "OpenAI",
-    "api_key": "ここにあなたのOpenAI APIキーを入力",
-    "model": "gpt-4o",
-    "max_tokens": 1500,
-    "summary_prompt": "以下の会話ログを、内容がわかるよう簡潔に要約してください。返答には「了解しました」や「要約します」などの前置きは不要です。要約だけを返してください。"
+    "template_version": "1.0",
+    "chat": {
+        "provider": "OpenAI",
+        "api_key": "ここにあなたのOpenAI APIキーを入力",
+        "model": "gpt-4o",
+        "max_tokens": 1500,
+        "summary_prompt": "以下の会話ログを、内容がわかるよう簡潔に要約してください。返答には「了解しました」や「要約します」などの前置きは不要です。要約だけを返してください。",
+        "imagegen_prompt": "以下の会話ログから、画像生成用のプロンプトを作成してください。返答には「了解しました」などの前置きは不要です。プロンプトだけを返してください。",
+        "imagegen_keywords": [ "生成", "描", "イラスト", "画像", "イメージ", "ビジュアル" ]
+    },
+    "vision": {
+        "provider": "OpenAI",
+        "api_key": "ここにあなたのOpenAI APIキーを入力",
+        "model": "gpt-4o",
+        "vision_prompt": "以下に挙げる画像を、画像毎に「画像１（連番）：内容」の形式で詳しく説明してください。返答には「了解しました」などの前置きは不要で、内容だけを返してください。"
+    },
+    "imagegen": {
+        "provider": "OpenAI",
+        "api_key": "ここにあなたのOpenAI APIキーを入力",
+        "model": "dall-e-3",
+        "size": "1024x1024",
+        "quality": "standard"
+    }
 }

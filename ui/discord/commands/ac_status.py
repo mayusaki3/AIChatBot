@@ -4,7 +4,6 @@ from discord_handler import service_name
 from common.session.user_session_manager import user_session_manager
 from common.session.server_session_manager import server_session_manager
 from common.utils.thread_utils import is_thread_managed
-from common.utils.image_model_manager import is_image_model_supported
 from ui.discord.discord_thread_context import context_manager
 
 HELP_TEXT = {
@@ -41,19 +40,17 @@ async def ac_status_command(interaction: Interaction):
             user_name = member.display_name
         else:
             user_name = f"id: {sharing_user_id}"
-        auth_provider = server_auth.get("provider", "未登録")
-        auth_model = server_auth.get("model", "未登録")
-        if is_image_model_supported(server_auth):
-            auth_model += " 🖼️"
-        msg += f"\nℹ️ {user_name} さんの認証情報［ {auth_provider} / {auth_model} ］が共有されています。"
+        auth = f"🗨️{server_auth['chat']['provider']}/{server_auth['chat']['model']}, "
+        auth += f"👀{server_auth['vision']['provider']}/{server_auth['vision']['model']}, "
+        auth += f"🖼️{server_auth['imagegen']['provider']}/{server_auth['imagegen']['model']}"
+        msg += f"\nℹ️ {user_name} さんの認証情報［ {auth} ］が共有されています。"
 
     user_auth = user_session_manager.get_session(user_id)
     if user_auth:
-        auth_provider = user_auth.get("provider", "未登録")
-        auth_model = user_auth.get("model", "未登録")
-        if is_image_model_supported(user_auth):
-            auth_model += " 🖼️"
-        msg += f"\n🧑‍💻 現在の認証情報［ {auth_provider} / {auth_model} ］"
+        auth = f"🗨️{user_auth['chat']['provider']}/{user_auth['chat']['model']}, "
+        auth += f"👀{user_auth['vision']['provider']}/{user_auth['vision']['model']}, "
+        auth += f"🖼️{user_auth['imagegen']['provider']}/{user_auth['imagegen']['model']}"
+        msg += f"\n🧑‍💻 現在の認証情報［ {auth} ］"
     else:
         if not server_auth:
             msg += "\n⚠️ AIと会話するには /ac_auth で認証情報を登録してください。"
