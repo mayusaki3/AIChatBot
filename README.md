@@ -28,6 +28,13 @@ pip install -r requirements.txt  # 初回のみ
 python ui/discord/Discord_AIChatBot.py
 ```
 
+requirements.txt に含まれる主なライブラリ:
+
+- discord.py (>=2.3.2)
+- aiohttp (>=3.12,<4)
+- python-dotenv
+- openai (>=1.0.0)
+
 ## /コマンド一覧（Discord）
 
 AIChatBot は以下の /コマンドを提供しています：
