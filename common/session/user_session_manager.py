@@ -8,10 +8,10 @@ class UserSessionManager:
         auth_data["user_id"] = user_id
         self.sessions[user_id] = auth_data
 
-   # 指定ユーザーIDのセッション情報を削除。
+    # 指定ユーザーIDのセッション情報を削除。
     def clear_session(self, user_id: int):
         user_id = str(user_id)
-        self.sessions[user_id] = []
+        self.sessions.pop(user_id, None)
 
     # 指定ユーザーのセッション情報を取得。
     def get_session(self, user_id: int):
@@ -22,6 +22,7 @@ class UserSessionManager:
     def has_session(self, user_id: int) -> bool:
         user_id = str(user_id)
         return user_id in self.sessions
+
 
 # シングルトンとして使うインスタンス
 user_session_manager = UserSessionManager()

@@ -7,10 +7,10 @@ class ServerSessionManager:
         server_id = str(server_id)
         self.sessions[server_id] = auth_data
 
-   # 指定サーバーのセッション情報を削除。
+    # 指定サーバーのセッション情報を削除。
     def clear_session(self, server_id: int):
         server_id = str(server_id)
-        self.sessions[server_id] = []
+        self.sessions.pop(server_id, None)
 
     # 指定サーバーのセッション情報を取得。
     def get_session(self, server_id: int):
@@ -21,6 +21,7 @@ class ServerSessionManager:
     def has_session(self, server_id: int) -> bool:
         server_id = str(server_id)
         return server_id in self.sessions
+
 
 # シングルトンとして使うインスタンス
 server_session_manager = ServerSessionManager()
