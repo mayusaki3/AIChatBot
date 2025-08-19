@@ -5,7 +5,7 @@ from common.utils.thread_utils import load_server_threads
 
 HELP_TEXT = {
     "usage": "/ac_threads",
-    "description": "AIチャットと会話中のスレッド一覧を表示します。"
+    "description": "あいちゃぼと会話中のスレッド一覧を表示します。"
 }
 
 @app_commands.command(name="ac_threads", description=HELP_TEXT["description"])

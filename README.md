@@ -1,6 +1,6 @@
-# AIChatBot
+# AIChatBot（AIChaBo/あいちゃぼ） 
 
-AIChatBot は、ユーザーの OpenAI API キーを使って Discord 上で ChatGPT を利用できる Bot です。  
+AIChatBot（AIChaBo/あいちゃぼ） は、ユーザーの OpenAI API キーを使って Discord 上で ChatGPT を利用できる Bot です。  
 構成は「UI層」「AI層」「共通層」に分かれており、将来的な多プラットフォーム対応を想定しています。
 
 ## 環境変数の設定（Discord用）
@@ -21,19 +21,99 @@ AIChatBot は、ユーザーの OpenAI API キーを使って Discord 上で Cha
     3. 対象のサーバー名を右クリック → 「IDをコピー」
     4. `.env` の DISCORD_GUILD_ID= に貼り付け
 
-## 起動方法
-
+## インストール方法
+### Ubuntuの場合
 ```shell
-pip install -r requirements.txt  # 初回のみ
-python ui/discord/Discord_AIChatBot.py
-```
+sudo apt update && sudo apt upgrade -y
 
+# Git, Python, venv 等
+sudo apt install -y git python3 python3-venv python3-pip unzip
+
+# 任意のディレクトリ作成
+cd /opt
+sudo mkdir AIChatBot
+sudo chown $USER AIChatBot
+cd AIChatBot
+
+# 仮想環境の作成と有効化
+python3 -m venv venv
+source venv/bin/activate
+
+# AIChatBotをクローン
+git clone -b main https://github.com/mayusaki3/AIChatBot.git src
+cd src
+
+# requirements.txt に応じて依存ライブラリをインストール
+pip install -r requirements.txt
+```
 requirements.txt に含まれる主なライブラリ:
 
+- python-dotenv
+- requests>=2.25.1
 - discord.py (>=2.3.2)
 - aiohttp (>=3.12,<4)
-- python-dotenv
 - openai (>=1.0.0)
+
+```shell
+cp .env.example .env
+# 環境変数の設定
+nano .env
+```
+
+## 使用方法
+### サービスの設定内容
+/etc/systemd/system/AIChatBot.service
+```ini
+[Unit]
+Description=AIChatBot Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/AIChatBot/src
+ExecStart=/opt/AIChatBot/venv/bin/python ui/discord/Discord_AIChatBot.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+### 起動方法
+```shell
+# 上記設定を書き込み
+sudo nano /etc/systemd/system/AIChatBot.service
+
+# 設定有効化と起動
+sudo systemctl daemon-reexec
+sudo systemctl daemon-reload
+sudo systemctl enable AIChatBot
+sudo systemctl start AIChatBot
+
+# 動作確認
+sudo journalctl -u AIChatBot -f
+```
+
+### 更新方法
+```shell
+# AIChatBot サーバーを停止
+sudo systemctl stop AIChatBot.service
+
+# 最新のコードを取得
+cd /opt/AIChatBot/src
+git pull origin main
+
+# 仮想環境をアクティベート
+source ../venv/bin/activate
+
+# 必要であれば依存パッケージを再インストール
+pip install -r requirements.txt
+
+# サービス再起動
+sudo systemctl start AIChatBot.service
+
+# ステータス確認
+sudo systemctl status AIChatBot.service
+```
 
 ## /コマンド一覧（Discord）
 
@@ -44,29 +124,27 @@ AIChatBot は以下の /コマンドを提供しています：
 | `/ac_help`                     | すべての /ac コマンドのヘルプを表示します。                            |
 | `/ac_template`                 | 認証情報設定用テンプレート（JSON）をダウンロードします。               |
 | `/ac_auth [file]`              | 使用するAIチャットの認証情報を登録します。 [*1]                        |
-| `/ac_removeauth`               | 登録したAIチャットの認証情報を削除します。 [*1]                        |
+| `/ac_removeauth`               | 登録したあいちゃぼの認証情報を削除します。 [*1]                        |
 | `/ac_authsharing`              | 認証情報が未登録の人に現在の認証情報をサーバー単位で共有します。 [*1]  |
 | `/ac_authunsharing`            | サーバー単位で共有されている認証情報の共有を解除します。 [*1]          |
-| `/ac_imageuse`                 | 使用中のモデルに画像対応マークを付けます。 [*2]                        |
-| `/ac_imagenonuse`              | 使用中のモデルに画像非対応マークを付けます。 [*2]                      |
-| `/ac_status`                   | 使用中のAIチャットの状態を表示します。                                 |
-| `/ac_threads`                  | AIチャットと会話中のスレッド一覧を表示します。                         |
-| `/ac_newchat [title] [Private]`| 新しいAIチャットスレッドを作成します（件名は任意）                     |
+| `/ac_status [option]`          | 使用中のあいちゃぼの状態を表示します。                                 |
+| `/ac_threads`                  | あいちゃぼと会話中のスレッド一覧を表示します。                         |
+| `/ac_newchat [title] [Private]`| あいちゃぼとの会話用に新しいスレッドを作成します（件名は任意）         |
 
 [*1]: 認証情報は「自分の認証情報」＞「共有された認証情報」の順に使用します。自分の認証情報のみ共有でき、誰の認証情報でも共有解除できます。
 [*2]: 画像対応マークがついているモデルとのチャットでは、添付された画像も送信します。
 
 | スレッド内コマンド             | 説明                                                                   |
 |--------------------------------|------------------------------------------------------------------------|
-| `/ac_invite`                   | AIChatBotを現在のスレッドに招待します。                                |
-| `/ac_leave`                    | AIChatBotを現在のスレッドから退出させます。                            |
+| `/ac_invite`                   | あいちゃぼを現在のスレッドに招待します。                               |
+| `/ac_leave`                    | あいちゃぼを現在のスレッドから退出させます。                           |
 | `/ac_newtopic`                 | 新しくトピックを始めます。以前の会話内容は忘れます。                   |
 | `/ac_loadtopic`                | トピックを読み直します。過去メッセージを編集/削除した場合に使用します。|
 | `/ac_summary`                  | 現在のトピックを要約し、要約前の会話内容は忘れます。                   |
 
-## 環境変数の設定（AIチャット用）
+## 環境変数の設定（あいちゃぼ用）
 
-チャット機能を使用するには、認証情報（JSONファイル）のアップロードが必要です。  
+あいちゃぼのチャット機能を使用するには、認証情報（JSONファイル）のアップロードが必要です。  
 1. `/ac_template` で認証情報設定用テンプレートをダウンロードします。
 2. 利用するAIチャット毎にリネームして、必要な情報を記入してください：
 

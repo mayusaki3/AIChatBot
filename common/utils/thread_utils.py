@@ -1,6 +1,9 @@
 import os
 import json
 
+# サーバーID毎に、AIChatBotを招待しているスレッド情報(スレッドID)をファイル上で保持する。
+# 保存先 ： ui/サービス名/data/threads/ {サーバーID}.json
+
 THREADS_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "ui", "{service_name}", "data", "threads")
 
 # サーバーIDに基づくスレッド情報の保存パスを取得

@@ -7,7 +7,7 @@ from common.utils.thread_utils import add_thread_to_server
 
 HELP_TEXT = {
     "usage": "/ac_newchat <title> <private>",
-    "description": "🔒 スレッド内使用不可: AIチャットとの新しいスレッドを作成します。"
+    "description": "🔒 スレッド内使用不可: あいちゃぼとのチャット用に新しいスレッドを作成します。"
 }
 
 @app_commands.command(name="ac_newchat", description=HELP_TEXT["description"])
@@ -46,7 +46,7 @@ async def ac_newchat_command(interaction: Interaction, title: Optional[str] = No
         add_thread_to_server(service_name, interaction.guild_id, thread.id)
         await thread.send(
             f"💬/ac_newchat: このスレッドは {interaction.user.mention} によって作成されました。\n"
-            f"・このスレッド内でのメッセージは、投稿者が登録した認証情報に基づいて AI に送信・応答されます。"
+            f"・このスレッド内でのメッセージは、投稿者が登録した認証情報に基づいて外部の AI に送信・応答されます。"
         )
 
     except Exception as e:

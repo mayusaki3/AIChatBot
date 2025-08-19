@@ -6,7 +6,7 @@ from ai.openai.validator import is_valid_openai_key, is_openai_chat_model_availa
 
 HELP_TEXT = {
     "usage": "/ac_auth <file>",
-    "description": "使用するAIチャットの認証情報を登録します。"
+    "description": "あいちゃぼが使用するAIチャットの認証情報を登録します。"
 }
 
 @app_commands.command(name="ac_auth", description=HELP_TEXT["description"])
@@ -36,7 +36,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                         if field not in section:
                             raise KeyError(field)
                     if key == "chat":
-                        for field in ["max_tokens", "summary_prompt", "imagegen_prompt", "imagegen_keywords"]:
+                        for field in ["max_tokens", "tone_prompt", "summary_prompt", "injection_prompt", "imagegen_prompt", "imagegen_keywords"]:
                             if field not in section:
                                 raise KeyError(f"chat.{field}")
                     if key == "vision":

@@ -25,28 +25,35 @@ async def ac_summarycommand(interaction: Interaction):
 
     # 認証情報チェック
     user_id = interaction.user.id
+    guild_id = interaction.guild.id
     if not user_session_manager.has_session(user_id):
-        await interaction.followup.send("⚠️ 認証情報を /ac_auth で登録してください。")
-        return
+        if not server_session_manager.has_session(guild_id):
+            await interaction.followup.send("⚠️ 認証情報を /ac_auth で登録してください。")
+            return
+
+    # 認証情報を取得
+    if server_session_manager.has_session(guild_id):
+        auth_data = server_session_manager.get_session(guild_id)
+    else:
+        auth_data = user_session_manager.get_session(user_id)
 
     if not context_manager.is_initialized(thread.id):
         await context_manager.ensure_initialized(thread)
 
     # メッセージをAIに送信
-    user_auth = user_session_manager.get_session(user_id)
     context_list = context_manager.get_context(thread.id)
     if len(context_list) == 0:
         await interaction.followup.send("❌ 要約する内容がありません。", ephemeral=True)
         return
     message_list = []
-    message_list.append(f"AIChatBot: {user_auth['summary_prompt']}\n")
+    message_list.append(f"AIChatBot: {auth_data['chat']['summary_prompt']}\n")
     for message in context_list:
         message_list.append(message)
 
     # OpenAIの場合
     reply = ""
-    if user_auth["provider"] == "OpenAI":
-        reply = await call_chatgpt(message_list, user_auth["api_key"], user_auth["model"])
+    if auth_data["provider"] == "OpenAI":
+        reply = await call_chatgpt(message_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"])
 
     await thread.send(
         f"💬/ac_summary: 要約した内容で新しくトピックを始めます。\n"

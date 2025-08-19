@@ -1,5 +1,7 @@
 import aiohttp
 
+# 認証情報で指定されたAPIが利用可能かチェックする
+
 OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
 OPENAI_IMAGEGEN_ENDPOINT = "https://api.openai.com/v1/images/generations"
 

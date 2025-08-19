@@ -1,7 +1,7 @@
 import os
 import sys
 import discord
-from discord import app_commands, Interaction, Thread, ChannelType
+from discord import app_commands, Interaction, Thread
 from discord.ext import commands
 from dotenv import load_dotenv
 from common.session.user_session_manager import user_session_manager
@@ -38,10 +38,6 @@ async def fetch_image_as_base64(url):
 # Discordメッセージ送信イベント
 @client.event
 async def on_message(message):
-    # メッセージがボットからのものであれば無視
-    if message.author.bot:
-        return
-
     # AIチャットスレッド以外は無視
     thread = message.channel
     if isinstance(thread, Thread):
@@ -56,22 +52,35 @@ async def on_message(message):
     if not context_manager.is_initialized(thread.id):
         await context_manager.ensure_initialized(thread)
     else:
-        context_manager.append_context(thread.id, f"{author_name}: {message.content}")
-    context_list = context_manager.get_context(thread.id)
+        refid = ""
+        if message.reference and message.reference.message_id:
+            refid = str(message.reference.message_id)
+        context_manager.append_context(thread.id, f"{author_name}: {message.content}", str(message.id), refid, message.attachments)
+
+    # メッセージがボットからのものであれば終了
+    if message.author.bot:
+        return
+
+    context_list = []
+    for context in context_manager.get_context(thread.id):
+        context_list.append(context["message"])
 
     # 認証情報チェック
     user_id = message.author.id
     guild_id = message.guild.id
     if not user_session_manager.has_session(user_id):
         if not server_session_manager.has_session(guild_id):
-            await message.reply("⚠️ 認証情報を /ac_auth で登録してください。")
+            await message.reply("⚠️ あいちゃぼと会話するには、認証情報を /ac_auth で登録してください。")
             return
 
-    # メッセージをAIに送信
+    # 認証情報を取得
     if server_session_manager.has_session(guild_id):
         auth_data = server_session_manager.get_session(guild_id)
     else:
         auth_data = user_session_manager.get_session(user_id)
+
+    # 追加情報を注入
+    context_list.append(context_manager.get_injection_message(auth_data))
 
     # 添付画像がある場合はコンテキストに追加
     # imageuse = is_image_model_supported(auth_data)
@@ -95,9 +104,8 @@ async def on_message(message):
     if auth_data["chat"]["provider"] == "OpenAI":
         async with message.channel.typing():
             reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
-            # レスポンスをコンテキストに追加
+            # レスポンス
             await message.channel.send(reply)
-            context_manager.append_context(thread.id, f"AIChatBot: {reply}")
 
     return
 
@@ -107,12 +115,12 @@ async def on_thread_delete(thread: discord.Thread):
     thread_id = str(thread.id)
     guild_id = str(thread.guild.id)
 
-    if is_thread_managed(service_name, guild_id, thread.id):
+    if is_thread_managed(service_name, guild_id, thread_id):
         try:
-            remove_thread_from_server(service_name, guild_id, thread.id)
-            print(f"✅ AIチャット対象からスレッド {thread_id} を削除しました。")
+            remove_thread_from_server(service_name, guild_id, thread_id)
+            print(f"✅ あいちゃぼの会話対象からスレッド {thread_id} を削除しました。")
         except Exception as e:
-            print(f"❌ AIチャット対象からスレッド {thread_id} が削除できませんでした: {e}")
+            print(f"❌ あいちゃぼの会話対象からスレッド {thread_id} が削除できませんでした: {e}")
 
 # メッセージ変更イベント
 @client.event
@@ -165,8 +173,7 @@ async def on_ready():
 
     except Exception as e:
         print(f"❌ コマンド同期に失敗しました: {e}")
-        import sys
-        sys.exit(1)
+        await client.close()
 
 # Bot起動
 def start_discord_bot():
