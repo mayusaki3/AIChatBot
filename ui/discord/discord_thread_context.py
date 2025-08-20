@@ -29,6 +29,11 @@ class DiscordThreadContextManager:
         "⚠️ あいちゃぼと会話するには、", "⚠️ 認証情報を", "💬/ac_newchat:", "💬/ac_invite:", "💬/ac_leave:"
     )
 
+    # あいちゃぼのユーザー名
+    AICHABO_NAMES= (
+        "AIChatBot:", "AIChatBot Dev:", "あいちゃぼ:", "あいちゃぼ Dev:"
+    )
+
     def __init__(self) -> None:
         self.manager = ThreadContextManager()
         self.initialized_threads: set[str] = set()
@@ -69,39 +74,43 @@ class DiscordThreadContextManager:
 
         # 古い→新しい順に格納
         for msg in reversed(messages):
-            author_name = msg.author.name.replace("AIChatBot", "あいちゃぼ").replace("あいちゃぼ Dev", "あいちゃぼ")
+            author_name = msg.author.name
             refid = str(msg.reference.message_id) if (msg.reference and msg.reference.message_id) else ""
             atts = self._normalize_image_attachments(msg.attachments)
-            self.manager.append_context(
-                thread_id=thread.id,
+            entry = self.append_context(
+                thread_id=str(thread.id),
                 message=f"{author_name}: {msg.content}",
                 msgid=str(msg.id),
                 refid=refid,
                 attachments=atts if atts else None,
             )
-            print(f"  [MSG++]: {author_name}: {msg.content}")
+            if entry is not None:
+                print(f"  [MSG++]: {entry['message']}")
 
         print(f"L [END  ]: {thread.name}")
 
-    # contextからメッセージ本文を取得
-    def _raw_text(self, content: str) -> str:
+    # messageからメッセージ本文を取得
+    def _raw_text(self, message: str) -> str:
         """'名前: 本文' 形式なら本文だけを取り出して判定に使う"""
-        parts = content.split(":", 1)
-        return parts[1].lstrip() if len(parts) == 2 else content
+        parts = message.split(":", 1)
+        return parts[1].lstrip() if len(parts) == 2 else message
 
     # スレッドIDごとにメッセージを追加
     def append_context(
         self,
         thread_id: str,
-        content: str,
+        message: str,
         msgid: str,
         refid: str | None,
         attachments: Optional[List[Dict[str, Any]]] = None,
-    ) -> None:
-        raw = self._raw_text(content)
+    ) -> Optional[Dict[str, Any]]:
+        msg = message
+        raw = self._raw_text(msg)
         if any(raw.startswith(p) for p in self.SKIP_PREFIXES):
-            return
-        self.manager.append_context(thread_id, content, msgid, refid, attachments)
+            return None
+        if any(msg.startswith(p) for p in self.AICHABO_NAMES):
+            msg = f"あいちゃぼ: {raw}"
+        return self.manager.append_context(thread_id, msg, msgid, refid, attachments)
 
     # スレッドIDごとにコンテキストを取得
     def get_context(self, thread_id: str) -> List[Dict[str, Any]]:

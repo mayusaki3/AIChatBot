@@ -1,6 +1,7 @@
 import os
 import json
 from datetime import datetime, timezone, timedelta
+from typing import Any, Dict, List, Optional
 
 # コンテキスト情報として、以下の内容を保持する。
 # - 収集範囲 : スレッド内の開始位置以降のすべてのメッセージ
@@ -39,7 +40,7 @@ class ThreadContextManager:
         msgid: str,
         refid: str | None,
         attachments: list | None
-    ) -> None:
+    ) -> Dict[str, Any]:
         thread_id = str(thread_id)
         if thread_id not in self.contexts:
             self.contexts[thread_id] = []
@@ -47,13 +48,15 @@ class ThreadContextManager:
         attachments = attachments or []
         state = "OK" if len(attachments) == 0 else ""  # 添付なしは即"OK", 添付ありは未処理扱い
 
-        self.contexts[thread_id].append({
+        entry: Dict[str, Any] = {
             "message": message,
             "msgid": str(msgid) if msgid is not None else "",
             "refid": str(refid) if refid is not None else "",
-            "attachments": attachments,
-            "state": state
-        })
+            "attachments": attachments or [],
+            "state": state,
+        }
+        self.contexts[thread_id].append(entry)
+        return entry
 
     # 追加情報注入用メッセージを生成（JST時刻差し込み）
     def get_injection_message(self, auth_data: dict) -> str:
