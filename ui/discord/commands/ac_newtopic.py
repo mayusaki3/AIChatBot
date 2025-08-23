@@ -18,7 +18,7 @@ async def ac_newtopiccommand(interaction: Interaction):
 
     thread = interaction.channel
     if not is_thread_managed(service_name, interaction.guild_id, thread.id):
-        await interaction.followup.send("⚠️ AIChatBotはこのスレッドに参加していません。", ephemeral=True)
+        await interaction.followup.send("⚠️ あいちゃぼはこのスレッドに参加していません。", ephemeral=True)
         return
 
     # AIチャットスレッドのコンテキスト状態

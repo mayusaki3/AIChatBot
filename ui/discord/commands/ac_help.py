@@ -28,7 +28,7 @@ async def ac_help_command(interaction: discord.Interaction):
                 help_messages.append(f"**/{module_name}**\nエラー: {e}")
 
     embed = discord.Embed(
-        title="AIChatBot コマンドヘルプ",
+        title="あいちゃぼ コマンドヘルプ",
         description="\n\n".join(help_messages),
         color=0x00ffcc
     )
