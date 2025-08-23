@@ -12,27 +12,52 @@ HELP_TEXT = {
     "description": "使用中のあいちゃぼの状態を表示します。"
 }
 
-# optionの解析（スペース区切りを想定）
-def _parse_flags(option: str | None) -> set[str]:
+# オプションの解析
+def _parse_option_tokens(option: str | None) -> list[tuple[str, str, bool | None]]:
+    # 返り値: [("set"|"get", key, value_or_None), ...]
+    #   - "-foo:on"  -> ("set", "foo", True)
+    #   - "-foo:off" -> ("set", "foo", False)
+    #   - "-foo"     -> ("get", "foo", None)
+    #   - "-showopt" -> ("get", "_list", None)
+    out: list[tuple[str, str, bool | None]] = []
     if not option:
-        return set()
-    return {tok.strip() for tok in option.split() if tok.strip().startswith("-")}
+        return out
+    for tok in option.split():
+        tok = tok.strip()
+        if not tok.startswith("-"):
+            continue
+        body = tok[1:]
+        if body.lower() == "showopt":
+            out.append(("get", "_list", None))
+            continue
+        if ":" in body:
+            key, val = body.split(":", 1)
+            key = key.strip().lower()
+            val = val.strip().lower()
+            if val in ("on", "off"):
+                out.append(("set", key, val == "on"))
+        else:
+            out.append(("get", body.strip().lower(), None))
+    return out
+
+# フラグの解析
+async def _maybe_await(result):
+    return await result if inspect.isawaitable(result) else result
 
 # 非同期処理
 async def _maybe_await(result):
     return await result if inspect.isawaitable(result) else result
 
 @app_commands.command(name="ac_status", description=HELP_TEXT["description"])
-@app_commands.describe(option="追加の指示: -exp=現スレッドのコンテキストをエクスポート, -expall=全スレッドのコンテキストをエクスポート")
+@app_commands.describe(option="オプション: ")
 async def ac_status_command(interaction: Interaction, option: str = None):
     await interaction.response.defer(thinking=True, ephemeral=True)
 
-    flags = _parse_flags(option)
     thread = interaction.channel
     msg_lines: list[str] = []
-    managed = False
 
     # スレッド管理状況
+    managed = False
     if isinstance(thread, Thread):
         # スレッドIDでスレッド情報取得（存在しない場合は None）
         if not is_thread_managed(service_name, interaction.guild_id, thread.id):
@@ -71,6 +96,23 @@ async def ac_status_command(interaction: Interaction, option: str = None):
         if not server_auth:
             msg_lines.append("⚠️ あいちゃぼと会話するには /ac_auth で認証情報を登録してください。")
 
+    # オプション処理
+    tokens = _parse_option_tokens(option)
+    opt_msgs: list[str] = []
+    for kind, key, val in tokens:
+        if kind == "set":
+            server_session_manager.set_option(guild_id, key, bool(val))
+        elif kind == "get":
+            if key == "_list":
+                all_opts = server_session_manager.all_options(guild_id)
+                if all_opts:
+                    pairs = "、".join([f"-{k}:{'on' if v else 'off'}" for k, v in sorted(all_opts.items())])
+                    opt_msgs.append(f"🔎 現在のオプション: {pairs}")
+                else:
+                    opt_msgs.append("🔎 設定済みのオプションはありません。")
+    if opt_msgs:
+        msg_lines.extend(opt_msgs)
+
     # AIチャットスレッドのコンテキスト状態
     if managed:
         if not context_manager.is_initialized(thread.id):
@@ -90,6 +132,7 @@ async def ac_status_command(interaction: Interaction, option: str = None):
 
     # option処理: -expall オプション, -exp オプション
     export_msgs: list[str] = []
+    flags = option.split() if option else []
     if "-expall" in flags:
         try:
             res = await _maybe_await(context_manager.export_all_contexts())

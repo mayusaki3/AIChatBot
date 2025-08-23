@@ -36,7 +36,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                         if field not in section:
                             raise KeyError(field)
                     if key == "chat":
-                        for field in ["max_tokens", "tone_prompt", "summary_prompt", "injection_prompt", "imagegen_prompt", "imagegen_keywords"]:
+                        for field in ["max_tokens", "tone_prompt", "reply_prompt", "summary_prompt", "injection_prompt", "imagegen_prompt", "imagegen_keywords"]:
                             if field not in section:
                                 raise KeyError(f"chat.{field}")
                     if key == "vision":

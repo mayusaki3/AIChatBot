@@ -49,12 +49,18 @@ async def on_message(message):
 
     # メッセージをコンテキストに追加
     author_name = message.author.display_name
+    refid = ""
     if not context_manager.is_initialized(thread.id):
         await context_manager.ensure_initialized(thread)
     else:
-        refid = ""
         if message.reference and message.reference.message_id:
             refid = str(message.reference.message_id)
+            try:
+                # 人間が返信した場合のみ返信元を辿り補完する
+                if not message.author.bot:
+                    await context_manager.backfill_reply_chain(thread, message, max_hops=10)
+            except Exception as e:
+                print(f"[reply-chain] backfill failed: {e}")
         context_manager.append_context(thread.id, f"{author_name}: {message.content}", str(message.id), refid, message.attachments)
 
     # メッセージがボットからのものであれば終了
@@ -64,7 +70,7 @@ async def on_message(message):
     context_list = []
     for context in context_manager.get_context(thread.id):
         context_list.append(context["message"])
-
+    
     # 認証情報チェック
     user_id = message.author.id
     guild_id = message.guild.id
@@ -78,6 +84,18 @@ async def on_message(message):
         auth_data = server_session_manager.get_session(guild_id)
     else:
         auth_data = user_session_manager.get_session(user_id)
+
+    # 返信元の情報を注入
+    if refid:
+        try:
+            parent_chain = await context_manager.fetch_parent_chain(thread, message, 1)
+            print(f"parent_chain={parent_chain}")
+            if parent_chain:
+                parent_text = parent_chain[-1].content or "(テキストなし)"
+                reply_hint = auth_data["chat"]["reply_prompt"].format(parent_message=parent_text)
+                context_list.append(reply_hint)
+        except Exception as e:
+            print(f"[reply-chain] backfill failed: {e}")
 
     # 追加情報を注入
     context_list.append(context_manager.get_injection_message(auth_data))
@@ -99,6 +117,12 @@ async def on_message(message):
     #                 count += 1
     #     msg += "]"
     #     context_list.append(f"{msg}")
+
+    # オプション -printmsg:on 処理
+    if server_session_manager.get_option(guild_id, "printmsg", False):
+        print("context_list =>")
+        for msg in context_list:
+            print(f"  {msg}")
 
     # OpenAIの場合
     if auth_data["chat"]["provider"] == "OpenAI":
