@@ -1,6 +1,7 @@
 import os
 import sys
 import discord
+import io
 from discord import app_commands, Interaction, Thread
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -10,7 +11,7 @@ from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from ui.discord.commands.load_commands import load_commands
 from ui.discord.discord_thread_context import context_manager
-from ai.openai.openai_api import call_chatgpt
+from ai.openai.openai_api import call_chatgpt, generate_image_from_prompt
 import aiohttp
 import base64
 
@@ -124,12 +125,49 @@ async def on_message(message):
         for msg in context_list:
             print(f"  {msg}")
 
-    # OpenAIの場合
-    if auth_data["chat"]["provider"] == "OpenAI":
-        async with message.channel.typing():
-            reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
-            # レスポンス
-            await message.channel.send(reply)
+    # 画像生成か判定
+    keywords = set(auth_data["chat"].get("imagegen_keywords", []))
+    if any(k in message.content for k in keywords):
+
+        # 画像生成 ==========
+
+        # OpenAIの場合
+        if auth_data["imagegen"]["provider"] == "OpenAI":
+            try:
+                # 画像用プロンプトは chat.imagegen_prompt を使って文脈から生成
+                image_prompt_seed = auth_data["chat"].get("imagegen_prompt", "")
+                # 直近の文脈を少し短めに連結（必要に応じて調整）
+                joined_context = "\n".join(context_list[-10:])
+                image_prompt = f"{image_prompt_seed}\n\n{joined_context}".strip()
+
+                async with message.channel.typing():
+                    img_bytes = await generate_image_from_prompt(
+                        prompt=image_prompt,
+                        api_key=auth_data["imagegen"]["api_key"],
+                        model=auth_data["imagegen"]["model"],
+                        size=auth_data["imagegen"]["size"],
+                        quality=auth_data["imagegen"]["quality"],
+                        timeout_sec=90
+                    )
+                    # 添付送信
+                    file = discord.File(fp=io.BytesIO(img_bytes), filename="aichabo_image.png")
+                    await message.channel.send(
+                        content="🖼️ 画像を生成しました。",
+                        file=file
+                    )
+            except Exception as e:
+                # 画像生成だけ失敗しても会話は続行できるよう、ここで握りつぶして通知のみ
+                await message.channel.send(f"⚠️ 画像生成に失敗しました: {e}")
+
+    else:
+        # チャット ==========
+
+        # OpenAIの場合
+        if auth_data["chat"]["provider"] == "OpenAI":
+            async with message.channel.typing():
+                reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
+                # レスポンス
+                await message.channel.send(reply)
 
     return
 

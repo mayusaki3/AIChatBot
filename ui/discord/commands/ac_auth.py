@@ -57,7 +57,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                 model_name = auth_json["chat"]["model"].strip()
                 result = await is_valid_openai_key(api_key)
                 if result is not True:
-                    await interaction.response.send_message(result, ephemeral=True)
+                    await interaction.followup.send("❌ Chat用の api_key は利用できません", ephemeral=True)
                     return                
                 if not await is_openai_chat_model_available(api_key, model_name):
                     await interaction.followup.send(f"❌ Chatモデル `{model_name}` は利用できません", ephemeral=True)
@@ -70,7 +70,7 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
                 model_name = auth_json["vision"]["model"].strip()
                 result = await is_valid_openai_key(api_key)
                 if result is not True:
-                    await interaction.response.send_message(result, ephemeral=True)
+                    await interaction.followup.send("❌ Vision用の api_key は利用できません", ephemeral=True)
                     return                
                 if not await is_openai_vision_model_available(api_key, model_name):
                     await interaction.followup.send(f"❌ Visionモデル `{model_name}` は利用できません", ephemeral=True)
@@ -81,11 +81,13 @@ async def ac_auth_command(interaction: Interaction, file: discord.Attachment):
             if auth_json["imagegen"]["provider"] == "OpenAI":
                 api_key = auth_json["imagegen"]["api_key"].strip()
                 model_name = auth_json["imagegen"]["model"].strip()
-                result = await is_valid_openai_key(api_key)
+                image_size = auth_json["imagegen"]["size"].strip()
+                image_quality = auth_json["imagegen"]["quality"].strip()
+                result = await is_openai_imagegen_model_available(api_key, model_name, image_size, image_quality)
                 if result is not True:
-                    await interaction.response.send_message(result, ephemeral=True)
+                    await interaction.followup.send("❌ ImageGen用の api_key は利用できません", ephemeral=True)
                     return                
-                if not await is_openai_imagegen_model_available(api_key, model_name):
+                if not await is_openai_imagegen_model_available(api_key, model_name, image_size, image_quality):
                     await interaction.followup.send(f"❌ ImageGenモデル `{model_name}` は利用できません", ephemeral=True)
                     return
             else:
