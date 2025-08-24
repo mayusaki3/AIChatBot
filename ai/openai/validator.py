@@ -1,9 +1,9 @@
 import aiohttp
+from ai.openai.openai_api import generate_image_from_prompt
 
 # 認証情報で指定されたAPIが利用可能かチェックする
 
 OPENAI_CHAT_ENDPOINT = "https://api.openai.com/v1/chat/completions"
-OPENAI_IMAGEGEN_ENDPOINT = "https://api.openai.com/v1/images/generations"
 
 # APIキーのチェック
 async def is_valid_openai_key(api_key: str):
@@ -83,22 +83,17 @@ async def is_openai_vision_model_available(api_key: str, model_name: str) -> boo
         return False
 
 # イメージ生成モデルのチェック
-async def is_openai_imagegen_model_available(api_key: str, model_name: str) -> bool:
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
-    test_payload = {
-        "model": model_name,
-        "prompt": "A cute baby sea otter",
-        "n": 1,
-        "size": "1024x1024"
-    }
-
+async def is_openai_imagegen_model_available(api_key: str, model_name: str, image_size: str, image_quality: str) -> bool:
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=30)) as session:
-            async with session.post(OPENAI_IMAGEGEN_ENDPOINT, headers=headers, json=test_payload) as response:
-                return response.status == 200
+        await generate_image_from_prompt(
+            "A cute baby sea otter",
+            api_key,
+            model_name,
+            image_size,
+            image_quality,
+            90
+        )
+        return True
     except Exception as e:
         print(f"[validator] ImageGenモデル利用可否確認エラー: {e}")
         return False

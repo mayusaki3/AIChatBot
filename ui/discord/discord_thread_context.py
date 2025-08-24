@@ -211,7 +211,7 @@ class DiscordThreadContextManager:
         thread_id = str(thread_id)
         if thread_id not in self.initialized_threads:
             self.initialized_threads.add(thread_id)
-            print(f"- [INIT ]: {thread_id}")
+            # print(f"- [INIT ]: {thread_id}")
         self.manager.clear_context(thread_id)
 
     # スレッドIDごとにコンテキストをリセット

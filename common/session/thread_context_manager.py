@@ -81,7 +81,7 @@ class ThreadContextManager:
 
     # JSON形式整形補助関数
     def _jsonable(self, obj):
-        """UI依存のオブジェクトが混ざっていても JSON に落とせるように整形"""
+        # UI依存のオブジェクトが混ざっていても JSON に落とせるように整形
         # プリミティブ系
         if obj is None or isinstance(obj, (bool, int, float, str)):
             return obj
@@ -94,16 +94,13 @@ class ThreadContextManager:
         # その他（DiscordのAttachmentやMessage等）は文字列化で逃がす
         return str(obj)
 
-    # 指定したスレッドのコンテキストをエクスポート
+    # 指定スレッドのコンテキストをファイルへエクスポート。
+    # - 出力先: common/session/dump（固定）
+    # - ファイル名: YYYYMMDD_スレッドID.json（JST）
+    # - 常に全件を出力
+    # - attachments がどんな構造でも JSON 化（非対応型は文字列化）
+    # 戻り値: 出力したファイルの絶対パス
     def export_context(self, thread_id: str) -> str:
-        """
-        指定スレッドのコンテキストをファイルへエクスポート。
-        - 出力先: common/session/dump（固定）
-        - ファイル名: YYYYMMDD_スレッドID.json（JST）
-        - 常に全件を出力
-        - attachments がどんな構造でも JSON 化（非対応型は文字列化）
-        戻り値: 出力したファイルの絶対パス
-        """
         thread_id = str(thread_id)
         data = self.get_context(thread_id)
 
@@ -131,11 +128,9 @@ class ThreadContextManager:
         return os.path.abspath(path)
 
     # 全スレッドをエクスポート
+    # すべてのスレッドについて export_context を実行。
+    # 戻り値: 出力したファイルパスのリスト
     def export_all(self) -> list[str]:
-        """
-        すべてのスレッドについて export_context を実行。
-        戻り値: 出力したファイルパスのリスト
-        """
         paths = []
         for thread_id in list(self.contexts.keys()):
             try:

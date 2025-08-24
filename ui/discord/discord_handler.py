@@ -1,6 +1,7 @@
 import os
 import sys
 import discord
+import io
 from discord import app_commands, Interaction, Thread
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -10,7 +11,8 @@ from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
 from ui.discord.commands.load_commands import load_commands
 from ui.discord.discord_thread_context import context_manager
-from ai.openai.openai_api import call_chatgpt
+from ai.openai.openai_api import call_chatgpt, generate_image_from_prompt
+from common.actions.imagegen_action import ImageGenAction
 import aiohttp
 import base64
 
@@ -98,7 +100,9 @@ async def on_message(message):
             print(f"[reply-chain] backfill failed: {e}")
 
     # 追加情報を注入
-    context_list.append(context_manager.get_injection_message(auth_data))
+    context_list.append(f"\s{context_manager.get_injection_message(auth_data)}")
+    context_list.append("\s" + auth_data["chat"]["aichabo_prompt"])
+    context_list.append("\s" + auth_data["chat"]["imagegen_prompt"])
 
     # 添付画像がある場合はコンテキストに追加
     # imageuse = is_image_model_supported(auth_data)
@@ -119,17 +123,61 @@ async def on_message(message):
     #     context_list.append(f"{msg}")
 
     # オプション -printmsg:on 処理
-    if server_session_manager.get_option(guild_id, "printmsg", False):
+    printmsg = server_session_manager.get_option(guild_id, "printmsg", False)
+    if printmsg:
         print("context_list =>")
         for msg in context_list:
+            msg = msg.replace("\s", "system: ", 1)
             print(f"  {msg}")
 
+    # チャット ==========
+
     # OpenAIの場合
+    reply =""
     if auth_data["chat"]["provider"] == "OpenAI":
         async with message.channel.typing():
             reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
-            # レスポンス
-            await message.channel.send(reply)
+
+            # オプション -printmsg:on 処理
+            if printmsg:
+                print(f"reply => {reply}")
+
+    # 画像生成判定
+    action = ImageGenAction.parse(reply)
+    # オプション -printmsg:on 処理
+    if printmsg and action:
+        print(f"action => {action.type}")
+
+    if action:
+        # 画像生成 ==========
+
+        # OpenAIの場合
+        if auth_data["imagegen"]["provider"] == "OpenAI":
+            try:
+                async with message.channel.typing():
+                    img_bytes = await generate_image_from_prompt(
+                        prompt=action.prompt,
+                        api_key=auth_data["imagegen"]["api_key"],
+                        model=auth_data["imagegen"]["model"],
+                        size=auth_data["imagegen"]["size"],
+                        quality=auth_data["imagegen"]["quality"],
+                        timeout_sec=90
+                    )
+                    # 添付送信
+                    file = discord.File(fp=io.BytesIO(img_bytes), filename="aichabo_image.png")
+                    await message.channel.send(
+                        content=action.success_message,
+                        file=file
+                    )
+            except Exception as e:
+                # 画像生成だけ失敗しても会話は続行できるよう、ここで握りつぶして通知のみ
+                await message.channel.send(f"{action.failure_message}: {e}")
+        return
+
+    # レスポンス
+    if reply:
+        reply = reply.replace("あいちゃぼ: ", "", 1)
+        await message.channel.send(reply)
 
     return
 
