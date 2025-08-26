@@ -9,10 +9,12 @@ from common.session.user_session_manager import user_session_manager
 from common.session.server_session_manager import server_session_manager
 from common.utils import thread_utils
 from common.utils.thread_utils import remove_thread_from_server, is_thread_managed
+from common.utils.websearch_utils import search_web, format_results_as_markdown
 from ui.discord.commands.load_commands import load_commands
 from ui.discord.discord_thread_context import context_manager
 from ai.openai.openai_api import call_chatgpt, generate_image_from_prompt
 from common.actions.imagegen_action import ImageGenAction
+from common.actions.websearch_action import WebSearchAction
 import aiohttp
 import base64
 
@@ -103,6 +105,7 @@ async def on_message(message):
     context_list.append(f"\s{context_manager.get_injection_message(auth_data)}")
     context_list.append("\s" + auth_data["chat"]["aichabo_prompt"])
     context_list.append("\s" + auth_data["chat"]["imagegen_prompt"])
+    context_list.append("\s" + auth_data["chat"]["websearch_prompt"])
 
     # 添付画像がある場合はコンテキストに追加
     # imageuse = is_image_model_supported(auth_data)
@@ -122,57 +125,94 @@ async def on_message(message):
     #     msg += "]"
     #     context_list.append(f"{msg}")
 
-    # オプション -printmsg:on 処理
+    # オプション -printmsg:on
     printmsg = server_session_manager.get_option(guild_id, "printmsg", False)
-    if printmsg:
-        print("context_list =>")
-        for msg in context_list:
-            msg = msg.replace("\s", "system: ", 1)
-            print(f"  {msg}")
 
-    # チャット ==========
+    while True:
+        # オプション -printmsg:on 処理
+        if printmsg:
+            print("context_list =>")
+            for msg in context_list:
+                if msg.startswith("\s"):
+                    msg = msg.replace("\s", "system: ", 1)
+                    print(f"  \033[32m{msg}\033[0m")
+                else:   
+                    print(f"  \033[33m{msg}\033[0m")
 
-    # OpenAIの場合
-    reply =""
-    if auth_data["chat"]["provider"] == "OpenAI":
-        async with message.channel.typing():
-            reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
-
-            # オプション -printmsg:on 処理
-            if printmsg:
-                print(f"reply => {reply}")
-
-    # 画像生成判定
-    action = ImageGenAction.parse(reply)
-    # オプション -printmsg:on 処理
-    if printmsg and action:
-        print(f"action => {action.type}")
-
-    if action:
-        # 画像生成 ==========
+        # チャット ==========
 
         # OpenAIの場合
-        if auth_data["imagegen"]["provider"] == "OpenAI":
+        reply =""
+        if auth_data["chat"]["provider"] == "OpenAI":
+            async with message.channel.typing():
+                reply = await call_chatgpt(context_list, auth_data["chat"]["api_key"], auth_data["chat"]["model"], auth_data["chat"]["max_tokens"])
+
+                # オプション -printmsg:on 処理
+                if printmsg:
+                    print(f"reply => \033[36m{reply}\033[0m")
+
+        # ツール判定
+        action = ImageGenAction.parse(reply)
+        if not action:
+            action = WebSearchAction.parse(reply)
+
+        if not action:
+            break
+
+        # オプション -printmsg:on 処理
+        if printmsg and action:
+            print(f"action => \033[35m{action.tool}\033[0m")
+
+        if action.tool == "image.generate":
+            # 画像生成 ==========
+
+            # OpenAIの場合
+            if auth_data["imagegen"]["provider"] == "OpenAI":
+                try:
+                    async with message.channel.typing():
+                        img_bytes = await generate_image_from_prompt(
+                            prompt=action.prompt,
+                            api_key=auth_data["imagegen"]["api_key"],
+                            model=auth_data["imagegen"]["model"],
+                            size=auth_data["imagegen"]["size"],
+                            quality=auth_data["imagegen"]["quality"],
+                            timeout_sec=90
+                        )
+                        # 添付送信
+                        file = discord.File(fp=io.BytesIO(img_bytes), filename="aichabo_image.png")
+                        await message.channel.send(
+                            content=action.success_message,
+                            file=file
+                        )
+                except Exception as e:
+                    # 画像生成だけ失敗しても会話は続行できるよう、ここで握りつぶして通知のみ
+                    await message.channel.send(f"{action.failure_message}: {e}")
+            return
+
+        if action.tool == "web.search":
+            # WEB検索 ==========
             try:
                 async with message.channel.typing():
-                    img_bytes = await generate_image_from_prompt(
-                        prompt=action.prompt,
-                        api_key=auth_data["imagegen"]["api_key"],
-                        model=auth_data["imagegen"]["model"],
-                        size=auth_data["imagegen"]["size"],
-                        quality=auth_data["imagegen"]["quality"],
-                        timeout_sec=90
+                    search_results = await search_web(
+                        queries=action.queries,
+                        top_result=action.top_result,
+                        recency_days=action.recency_days,
+                        lang=action.lang,
+                        timeout=15
                     )
-                    # 添付送信
-                    file = discord.File(fp=io.BytesIO(img_bytes), filename="aichabo_image.png")
-                    await message.channel.send(
-                        content=action.success_message,
-                        file=file
-                    )
+                    if not search_results:
+                        result = f"{action.queries} に関する情報は見つかりませんでした。"
+                    else:
+                        formatted_results = format_results_as_markdown(search_results, require_citations=action.require_citations)
+                        result = f"\s{action.queries} の検索結果→{formatted_results}"
             except Exception as e:
-                # 画像生成だけ失敗しても会話は続行できるよう、ここで握りつぶして通知のみ
-                await message.channel.send(f"{action.failure_message}: {e}")
-        return
+                result = f"{action.queries} の検索中にエラーが発生しました: {e}"
+            context_list.append(result)
+            if printmsg:
+                print(f"websearch result => \033[35m{result}\033[0m")
+            continue
+
+        break
 
     # レスポンス
     if reply:

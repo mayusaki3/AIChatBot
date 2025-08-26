@@ -53,6 +53,7 @@ requirements.txt に含まれる主なライブラリ:
 - discord.py (>=2.3.2)
 - aiohttp (>=3.12,<4)
 - openai (>=1.0.0)
+- duckduckgo-search>=5.3.0
 
 ```shell
 cp .env.example .env
@@ -178,19 +179,19 @@ AIChatBot は以下の /コマンドを提供しています：
             "provider": "OpenAI",
             "api_key": "ここにあなたのOpenAI APIキーを入力",
             "model": "gpt-4o",
-            "max_tokens": 1500,
-            "tone_prompt": "フレンドリーで親しみやすい口調で、ユーザーの質問に対して丁寧に答えること。",
-            "reply_prompt": "注: ひとつ前の発言は「{parent_message}」への返信です。",
+            "tone_prompt": "舌足らずな口調で、ユーザーの質問に対して答えること。",
             "summary_prompt": "以下の会話ログを、内容がわかるよう簡潔に要約してください。返答には「了解しました」や「要約します」などの前置きは不要です。要約だけを返してください。",
-            "injection_prompt": "ひとつ前までの会話に対して返答すること。\n今は {now_jst} です。あなたの名前は「あいちゃぼ」です。空のメンションがあった場合は用事のみ聞くこと。",
-            "imagegen_prompt": "以下の会話ログから、画像生成用のプロンプトを作成してください。返答には「了解しました」などの前置きは不要です。プロンプトだけを返してください。",
-            "imagegen_keywords": [ "生成", "描", "イラスト", "画像", "イメージ", "ビジュアル" ]
+
+            (中略)
+
         },
         "vision": {
             "provider": "OpenAI",
             "api_key": "ここにあなたのOpenAI APIキーを入力",
             "model": "gpt-4o",
-            "vision_prompt": "以下に挙げる画像を、画像毎に「画像１（連番）：内容」の形式で詳しく説明してください。返答には「了解しました」などの前置きは不要で、内容だけを返してください。"
+
+            (中略)
+
         },
         "imagegen": {
             "provider": "OpenAI",
@@ -204,12 +205,12 @@ AIChatBot は以下の /コマンドを提供しています：
     
     ### 🔸 各フィールドの説明
    
-    - **chat**：テキスト会話に使用する設定です。`model` は GPT 系、`max_tokens` は最大応答トークン数、`summary_prompt` は要約用プロンプトです。
+    - **chat**：テキスト会話に使用する設定です。`model` は GPT 系、`max_tokens` は最大応答トークン数、`tone_prompt` は口調用、`summary_prompt` は要約用プロンプトです。
     - **vision**：画像付きメッセージを処理する際に使用されます。画像を含む質問がある場合、この設定があれば画像を処理できます。
     - **imagegen**：画像生成（例：DALL·E）用の設定です。
     
     > ⚠ 各セクションの `"provider"` は `"OpenAI"` 以外も指定可能です（将来対応予定）。  
-    > ⚠ `vision` や `imagegen` セクションが未指定の場合、該当機能は無効になります。
+    > ⚠ Web検索機能は [DuckDuckGo](https://duckduckgo.com/) を使用しています。
 
 ## 招待リンクの設定
 
